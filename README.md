@@ -6,8 +6,7 @@ autonomous IR agent that triages at machine speed *without* hallucinating or
 touching the original evidence.
 
 > **Architecture:** Custom MCP Server (architectural trust boundary) + a
-> self-correcting agent loop. See [`../STRATEGY.md`](../STRATEGY.md) for the full
-> rationale and how each piece maps to the judging criteria.
+> self-correcting agent loop. 
 
 ---
 
