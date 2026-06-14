@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.env
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Runtime artifacts — NEVER commit evidence or logs containing case data
+audit/*.jsonl
+runs/
+mnt/
+*.E01
+*.dd
+*.raw
+*.mem
+*.vmem
+*.ova
+
+# OS
+.DS_Store

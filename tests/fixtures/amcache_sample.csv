@@ -1,0 +1,4 @@
+ApplicationName,FullPath,Name,SHA1,FileKeyLastWriteTimestamp
+,C:\Users\victim\AppData\Local\Temp\evil.exe,evil.exe,da39a3ee5e6b4b0d3255bfef95601890afd80709,2026-06-01 03:14:07
+,C:\Windows\System32\cmd.exe,cmd.exe,aabbccddeeff00112233445566778899aabbccdd,2024-01-02 10:00:00
+,C:\Users\victim\Downloads\mimikatz.exe,mimikatz.exe,1122334455667788990011223344556677889900,2026-06-01 03:10:55

@@ -1,0 +1,5 @@
+ParentPath,FileName,FileSize,Created0x10,LastModified0x10,InUse
+C:\Users\victim\AppData\Local\Temp,evil.exe,204800,2026-06-01 03:13:50,2026-06-01 03:13:50,True
+C:\Windows\System32,cmd.exe,289792,2024-01-02 10:00:00,2024-01-02 10:00:00,True
+C:\Users\victim\Downloads,mimikatz.exe,1234567,2026-06-01 03:10:40,2026-06-01 03:10:40,True
+C:\Users\victim\AppData\Local\Temp,staging.zip,5242880,2026-06-01 03:20:00,2026-06-01 03:20:00,False
