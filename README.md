@@ -94,6 +94,66 @@ python run_live.py --evidence-root /mnt/case \
 `--evidence-files` are SHA-256-verified before and after the run; a hash change
 aborts with a `SpoliationError`.
 
+## Deploying on the SIFT Workstation (end-to-end)
+
+The target platform is the SANS SIFT Workstation. On an **x86-64 host (Windows or
+Linux)** the OVA runs natively in VMware/VirtualBox — full speed (Apple Silicon
+Macs would emulate x86 slowly; use an Intel/Windows host).
+
+### 1. Get the case data (SANS *Find Evil!* sample data)
+Use the **`SRL-2018`** scenario — it has paired **disk + memory for the same
+hosts**, which is what enables the disk↔memory correlation this agent is built
+for. Smallest complete unit:
+
+| File | Size | Why |
+|---|---|---|
+| `base-dc-memory.7z` | 808 MB | Domain-controller RAM — Volatility `pslist`/`netscan`. Download this first. |
+| `base-dc-cdrive.E01` | 11.5 GB | Matching DC disk — MFT, Amcache, Prefetch, EVTX. |
+
+Optional second host for richer endpoint execution artifacts:
+`base-wkstn-01-c-drive.E01` (15.8 GB). Two hosts max — don't sprawl.
+
+### 2. Run the SIFT VM
+1. Install **VMware Workstation Player** (free) or **VirtualBox**.
+2. **File → Import** the SIFT `.ova`; give it **8 GB+ RAM**, **4 vCPU**.
+3. Keep the case data on the host and expose it via a **shared folder** (don't
+   copy 12 GB into the VM). Login: `sansforensics` / `forensics`.
+
+### 3. Install the Protocol SIFT baseline (the accuracy scoreboard)
+```bash
+curl -fsSL https://raw.githubusercontent.com/teamdfir/protocol-sift/main/install.sh | bash
+```
+Run it once on the case data and capture its output — its hallucinations are the
+baseline we measure against (`benchmark/score.py`).
+
+### 4. Install SIFT-Sentinel
+```bash
+./install.sh && source .venv/bin/activate
+pytest && python demo.py        # verify it runs on the SIFT box
+```
+
+### 5. Mount the evidence READ-ONLY (as root: `sudo su -`)
+```bash
+mkdir -p /mnt/ewf /mnt/case /evidence
+ewfmount /path/to/base-dc-cdrive.E01 /mnt/ewf            # E01 -> raw
+mount -o ro,loop,show_sys_files /mnt/ewf/ewf1 /mnt/case  # NTFS, read-only
+7z x base-dc-memory.7z -o/evidence/                      # -> base-dc-memory.mem
+```
+Artifacts then live at: `/mnt/case/$MFT`,
+`/mnt/case/Windows/appcompat/Programs/Amcache.hve`,
+`/mnt/case/Windows/Prefetch/`, the `.evtx` files under
+`/mnt/case/Windows/System32/winevt/Logs/`, and `/evidence/base-dc-memory.mem`.
+
+### 6. Run the agent against real evidence
+```bash
+export ANTHROPIC_API_KEY=...
+python run_live.py --evidence-root /mnt/case \
+  --case "Triage suspected APT intrusion on the domain controller (disk + memory)." \
+  --evidence-files '$MFT' Windows/appcompat/Programs/Amcache.hve
+```
+Then score against the baseline with `benchmark/score.py` using a ground-truth
+answer key for the case.
+
 ## Status
 
 Six typed forensic tools (disk + memory), security core, MCP server, confidence
