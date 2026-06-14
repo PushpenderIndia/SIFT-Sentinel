@@ -1,0 +1,236 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R] /Count 4 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+6 0 obj
+<< /Length 4242 >>
+stream
+BT /F2 18.00 Tf 1 0 0 1 54.00 707.70 Tm (SIFT-Sentinel Findings Report) Tj ET
+BT /F2 11.00 Tf 1 0 0 1 54.00 688.85 Tm (Case: BASE-DC intrusion triage) Tj ET
+BT /F1 9.50 Tf 1 0 0 1 54.00 676.02 Tm (Generated: 2026-06-14 18:00:43 UTC) Tj ET
+BT /F1 9.50 Tf 1 0 0 1 54.00 663.20 Tm (Evidence root: /mnt/cases) Tj ET
+BT /F1 9.50 Tf 1 0 0 1 54.00 650.37 Tm (Audit log: audit/execution-log.jsonl) Tj ET
+BT /F2 16.00 Tf 1 0 0 1 54.00 612.77 Tm (SIFT-Sentinel Triage Report) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 591.60 Tm (Host: base-dc.shieldbase.lan \(Windows Server 2016 domain controller\) Evidence root: /mnt/cases) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 577.42 Tm (Memory image: /evidence/base-dc-memory.img Case notes / IOCs supplied: none ? unbiased full-host) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 563.25 Tm (sweep) Tj ET
+BT /F2 13.50 Tf 1 0 0 1 54.00 531.02 Tm (Tooling Limitations Affecting Confidence) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 509.85 Tm (Read these first; they cap the confidence of several findings below.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 491.67 Tm (? The memory image returned 0 records for both mem_pslist \(call-000009\) and mem_netscan) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 477.50 Tm (\(call-000010\), with no error. Live-process and C2 analysis is unavailable: injected processes) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 463.32 Tm (and external connections can be neither confirmed nor excluded.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 449.15 Tm (? Prefetch is absent \(call-000008\) ? disabled on this DC. The primary cross-corroborator for) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 434.97 Tm (evidence of execution is gone.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 420.80 Tm (? parse_event_logs exposes only event_id, time, computer, and description ? no account name,) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 406.62 Tm (source IP, logon type, or service name/ImagePath. Logon and service-install attribution is) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 392.45 Tm (therefore impossible with current tooling, capping several items at UNCERTAIN.) Tj ET
+BT /F2 13.50 Tf 1 0 0 1 54.00 360.22 Tm (Timeline of Suspicious / Notable Activity) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 342.05 Tm (? 2018-05-08 22:09 ? McAfee Agent install \(mfemactl.exe in Administrator Temp; Agent dirs\).) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 327.87 Tm (Benign. \(call-000007, call-000013, call-000014\)) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 313.70 Tm (? 2018-08-16 to 2018-09-07 ? Recurring interactive PowerShell by rsydow-a on the DC;) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 299.52 Tm (transcripts on 08-16 \(x3\), 08-17, 08-28, 09-03, 09-07. \(call-000015\)) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 285.35 Tm (? 2018-09-04 13:11 to 2018-09-05 22:56 ? Failed-logon storm, ~15-minute cadence, 204 events.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 271.17 Tm (\(call-000012\)) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 257.00 Tm (? 2018-09-05 12:16 / 12:27 ? Windows\\Temp\\DSWBFB8.tmp, DSW5BA0.tmp created. \(call-000014\)) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 242.82 Tm (? 2018-09-06 22:11 \(x2\) ? Clustered service installs, off the normal 2-day cadence.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 228.65 Tm (\(call-000013\)) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 214.47 Tm (? 2018-09-07 20:25:57 ? Windows\\NTDS\\temp.edb created \(AD database temp\). \(call-000014\)) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 200.30 Tm (? 2018-09-07 20:26 to 20:30 \(x2\) ? Clustered service installs. \(call-000013\)) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 186.12 Tm (? 2018-09-07 20:29 to 21:00 ? rsydow-a interactive session: GPP Drives.xml, PowerShell) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 171.95 Tm (transcript \(16:36 local\), IE history, Cortana/Media caches. \(call-000015\)) Tj ET
+BT /F2 13.50 Tf 1 0 0 1 54.00 139.72 Tm (Confirmed Findings [CONFIRMED]) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 118.55 Tm (None meet the two-independent-source bar. Prefetch is gone and the memory image is empty, so the) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 104.37 Tm (usual corroboration chains \(Amcache + Prefetch + MFT\) cannot be completed. That degradation of) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 90.20 Tm (corroboration capacity is itself a finding.) Tj ET
+BT /F2 13.50 Tf 1 0 0 1 54.00 57.97 Tm (Inferred Findings [INFERRED]) Tj ET
+
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 5113 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 66.00 723.83 Tm (? Host is substantially a clean DC baseline. Amcache \(call-000006, 37 records\) is almost) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 709.65 Tm (entirely signed OS binaries; the only user-writable-path executables are benign installers) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 695.48 Tm (\(wdksetup.exe = Windows Driver Kit, mfemactl.exe = McAfee\). The MFT Temp sweep \(call-000014,) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 681.30 Tm (913 records\) found zero deleted executables, zero malware-like binaries, and no) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 667.13 Tm (double-extensions or ADS in Temp. Confirmed by: a working memory image plus Prefetch would) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 652.95 Tm (allow ruling out memory-only / fileless implants.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 638.78 Tm (? Automated failed-logon storm, 2018-09-04 13:11 to 2018-09-05 22:56, metronomic ~15-minute) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 624.60 Tm (cadence with triple-bursts \(call-000012\). The mechanical regularity points to an automated) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 610.43 Tm (agent or scheduled task with stale credentials, not interactive brute force. Confirmed by:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 596.25 Tm (the account name and source IP from raw 4625 EventData, which current tooling does not) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 582.08 Tm (expose.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 567.90 Tm (? rsydow-a ran PowerShell interactively on the DC repeatedly \(08-16 through 09-07\) with) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 553.73 Tm (transcription enabled \(call-000015\). The -a suffix implies an admin account; consistent with) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 539.55 Tm (either legitimate DC administration or hands-on-keyboard activity. Confirmed by: reading the) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 525.38 Tm (transcript contents via a sanctioned read path.) Tj ET
+BT /F2 13.50 Tf 1 0 0 1 54.00 493.15 Tm (Contradictions [CONTRADICTION]) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 474.98 Tm (? None surfaced between sources. The only tension is absence vs. expectation: a DC with) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 460.80 Tm (26,811 successful logons and an active admin produced an empty memory capture, which is) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 446.63 Tm (inconsistent with a live host. Treat /evidence/base-dc-memory.img as missing / unreadable /) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 432.45 Tm (wrong path, not as "no activity.") Tj ET
+BT /F2 13.50 Tf 1 0 0 1 54.00 400.23 Tm (Items Needing Follow-up [UNCERTAIN]) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 382.05 Tm (? Windows\\NTDS\\temp.edb created 2018-09-07 20:25:57 immediately before two 7045 service) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 367.88 Tm (installs \(20:26 to 20:30\). The pattern matches NTDS.dit / VSS credential-extraction TTPs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 353.70 Tm (\(ntdsutil IFM\), but is equally consistent with routine AD maintenance or reboot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 339.53 Tm (Unattributable and uncorroborated; cannot escalate.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 325.35 Tm (? Off-cadence 7045 clusters on 09-06 22:11 and 09-07 20:26 break the otherwise every-2-days) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 311.18 Tm (update rhythm, but without service names \(tool limitation\) their nature is unknown.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 297.00 Tm (? Windows\\Temp\\DSW*.tmp \(09-05\): unidentified temp files; not executables.) Tj ET
+BT /F2 13.50 Tf 1 0 0 1 54.00 264.78 Tm (MITRE ATT&CK Mapping \(candidate, evidence-limited\)) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 246.60 Tm (? T1110 Brute Force / Credential Stuffing ? failed-logon storm \(call-000012\). Low confidence;) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 232.43 Tm (could be a misconfigured service account.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 218.25 Tm (? T1059.001 Command and Scripting Interpreter: PowerShell ? recurring transcripts for) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 204.08 Tm (rsydow-a \(call-000015\).) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 189.90 Tm (? T1003.003 OS Credential Dumping: NTDS ? hypothesis only, from NTDS\\temp.edb plus) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 175.73 Tm (service-install timing \(call-000014, call-000013\). Not corroborated.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 161.55 Tm (? T1543.003 Create or Modify System Process: Windows Service ? off-cadence 7045 installs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 147.38 Tm (\(call-000013\). Nature unknown.) Tj ET
+BT /F2 13.50 Tf 1 0 0 1 54.00 115.15 Tm (Recommended Next Steps \(prioritised\)) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 96.98 Tm (1. Fix the memory evidence. Verify the path/mount of /evidence/base-dc-memory.img and re-run) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 82.80 Tm (mem_pslist and mem_netscan. An empty DC capture is a collection failure, not a result.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 68.63 Tm (2. Pull raw 4625 / 4624 EventData \(TargetUserName, IpAddress, LogonType, WorkstationName\) to) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 54.45 Tm (attribute the failed-logon storm ? the single most informative gap.) Tj ET
+
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 5651 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 66.00 723.83 Tm (3. Read the rsydow-a PowerShell transcripts \(especially ...20180907163638.txt and the 08-16) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 709.65 Tm (set\) via the audited read path; they likely contain verbatim commands run on the DC.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 695.48 Tm (4. Retrieve 7045 service names / ImagePaths for the 09-06 22:11 and 09-07 20:26 clusters;) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 681.30 Tm (correlate against the NTDS\\temp.edb write to confirm or deny NTDS.dit extraction.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 667.13 Tm (5. Add an execution corroborator absent Prefetch: pull SRUM, ShimCache \(SYSTEM hive\), and the) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 66.00 652.95 Tm (full-detail Amcache set to rebuild the execution timeline.) Tj ET
+BT /F2 13.50 Tf 1 0 0 1 54.00 620.73 Tm (Bottom Line) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 599.55 Tm (No malware, dropped binaries, deleted executables, or C2 were found in the available artifacts.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 585.38 Tm (The host looks largely like a clean DC baseline. The three real leads ? an automated) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 571.20 Tm (failed-logon storm, repeated admin PowerShell by rsydow-a, and NTDS/temp plus off-cadence) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 557.03 Tm (service activity on 09-06/07 ? are all currently unattributable because the memory image is) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 542.85 Tm (empty and the event-log tool omits account/IP/service fields. Resolve those two gaps before) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 54.00 528.68 Tm (drawing conclusions.) Tj ET
+BT /F2 13.50 Tf 1 0 0 1 54.00 498.45 Tm (Chain-of-Custody Integrity Check) Tj ET
+BT /F1 10.00 Tf 1 0 0 1 54.00 484.95 Tm (PASS: all 9 cited call_id\(s\) resolve to a logged tool invocation in the audit trail.) Tj ET
+BT /F1 9.00 Tf 1 0 0 1 54.00 469.80 Tm (Note: 6 logged call\(s\) are not cited in the findings \(informational, not an error\).) Tj ET
+BT /F2 13.50 Tf 1 0 0 1 54.00 439.58 Tm (Audit Trail) Tj ET
+BT /F1 9.50 Tf 1 0 0 1 54.00 426.75 Tm (16 tool invocation\(s\), append-only. Every finding above cites a call_id resolved here.) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 410.75 Tm (call-000003  analyze_prefetch  [ERROR]  0 ms  2026-06-14T13:42:15Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 400.75 Tm (    args: prefetch_path=/mnt/cases/Windows/Prefetch/) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 390.75 Tm (    error: No .pf files found in /mnt/cases/Windows/Prefetch ? Prefetch may be disabled \(common on) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 380.75 Tm (Windows Server/DC\).) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 366.75 Tm (call-000001  get_amcache  [exit=0]  6390 ms  2026-06-14T14:05:37Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 356.75 Tm (    binary: AmcacheParser) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 346.75 Tm (    sha256: bcf639115a6b5995ef56734c76d3d40fd8b758b687a111b2a6f6744d91b9a78d) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 336.75 Tm (    args: amcache_hive=/mnt/cases/Windows/appcompat/Programs/Amcache.hve) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 322.75 Tm (call-000002  extract_mft_timeline  [exit=0]  83601 ms  2026-06-14T14:06:03Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 312.75 Tm (    binary: MFTECmd) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 302.75 Tm (    sha256: 4b829ec61b34a9817d8eb44ae36e9dfc2e90fdc8f429eec40127ff34cc2f18da) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 292.75 Tm (    args: mft_file=/mnt/cases/$MFT, path_filter=None) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 278.75 Tm (call-000001  extract_mft_timeline  [exit=0]  58719 ms  2026-06-14T14:09:06Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 268.75 Tm (    binary: MFTECmd) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 258.75 Tm (    sha256: 4b829ec61b34a9817d8eb44ae36e9dfc2e90fdc8f429eec40127ff34cc2f18da) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 248.75 Tm (    args: mft_file=/mnt/cases/$MFT, path_filter=None) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 234.75 Tm (call-000004  get_amcache  [exit=0]  3962 ms  2026-06-14T14:44:14Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 224.75 Tm (    binary: AmcacheParser) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 214.75 Tm (    sha256: bcf639115a6b5995ef56734c76d3d40fd8b758b687a111b2a6f6744d91b9a78d) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 204.75 Tm (    args: amcache_hive=/mnt/cases/Windows/appcompat/Programs/Amcache.hve) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 190.75 Tm (call-000005  extract_mft_timeline  [exit=0]  59051 ms  2026-06-14T14:44:21Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 180.75 Tm (    binary: MFTECmd) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 170.75 Tm (    sha256: 4b829ec61b34a9817d8eb44ae36e9dfc2e90fdc8f429eec40127ff34cc2f18da) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 160.75 Tm (    args: mft_file=/mnt/cases/$MFT, path_filter=None) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 146.75 Tm (call-000006  get_amcache  [exit=0]  6781 ms  2026-06-14T17:32:03Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 136.75 Tm (    binary: AmcacheParser) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 126.75 Tm (    sha256: bcf639115a6b5995ef56734c76d3d40fd8b758b687a111b2a6f6744d91b9a78d) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 116.75 Tm (    args: amcache_hive=/mnt/cases/Windows/appcompat/Programs/Amcache.hve) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 102.75 Tm (call-000007  extract_mft_timeline  [exit=0]  89806 ms  2026-06-14T17:32:26Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 92.75 Tm (    binary: MFTECmd) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 82.75 Tm (    sha256: 4b829ec61b34a9817d8eb44ae36e9dfc2e90fdc8f429eec40127ff34cc2f18da) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 72.75 Tm (    args: mft_file=/mnt/cases/$MFT, path_filter=None) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 58.75 Tm (call-000008  analyze_prefetch  [ERROR]  0 ms  2026-06-14T17:34:38Z) Tj ET
+
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 3286 >>
+stream
+BT /F3 8.00 Tf 1 0 0 1 54.00 728.00 Tm (    args: prefetch_path=/mnt/cases/Windows/Prefetch/) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 718.00 Tm (    error: No .pf files found in /mnt/cases/Windows/Prefetch ? Prefetch may be disabled \(common on) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 708.00 Tm (Windows Server/DC\).) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 694.00 Tm (call-000009  mem_pslist  [exit=1]  5324 ms  2026-06-14T17:36:01Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 684.00 Tm (    binary: vol) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 674.00 Tm (    sha256: 9679193c2b7852817006c55481124666422fea67ba63c872cf5e4203c6fa629a) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 664.00 Tm (    args: memory_image=/evidence/base-dc-memory.img) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 650.00 Tm (call-000010  mem_netscan  [exit=1]  4682 ms  2026-06-14T17:37:34Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 640.00 Tm (    binary: vol) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 630.00 Tm (    sha256: 9679193c2b7852817006c55481124666422fea67ba63c872cf5e4203c6fa629a) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 620.00 Tm (    args: memory_image=/evidence/base-dc-memory.img) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 606.00 Tm (call-000011  parse_event_logs  [exit=-1]  353849 ms  2026-06-14T17:37:53Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 596.00 Tm (    binary: EvtxECmd) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 586.00 Tm (    sha256: 62c2cb167fc5ab3a77bd7410a04911ecbbf2f345ba094c510565b0d047e1c2e5) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 576.00 Tm (    args: event_id=4624, evtx_file=/mnt/cases/Windows/System32/winevt/Logs/Security.evtx) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 562.00 Tm (call-000012  parse_event_logs  [exit=-1]  338616 ms  2026-06-14T17:44:05Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 552.00 Tm (    binary: EvtxECmd) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 542.00 Tm (    sha256: 62c2cb167fc5ab3a77bd7410a04911ecbbf2f345ba094c510565b0d047e1c2e5) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 532.00 Tm (    args: event_id=4625, evtx_file=/mnt/cases/Windows/System32/winevt/Logs/Security.evtx) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 518.00 Tm (call-000013  parse_event_logs  [exit=0]  64290 ms  2026-06-14T17:50:41Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 508.00 Tm (    binary: EvtxECmd) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 498.00 Tm (    sha256: 5638bf6e4a63065d631075101456f9696117db6aa08909aaf521de3d33ca6b5f) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 488.00 Tm (    args: event_id=7045, evtx_file=/mnt/cases/Windows/System32/winevt/Logs/System.evtx) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 474.00 Tm (call-000014  extract_mft_timeline  [exit=0]  100865 ms  2026-06-14T17:53:05Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 464.00 Tm (    binary: MFTECmd) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 454.00 Tm (    sha256: 4b829ec61b34a9817d8eb44ae36e9dfc2e90fdc8f429eec40127ff34cc2f18da) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 444.00 Tm (    args: mft_file=/mnt/cases/$MFT, path_filter=Temp) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 54.00 430.00 Tm (call-000015  extract_mft_timeline  [exit=0]  81912 ms  2026-06-14T17:54:51Z) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 420.00 Tm (    binary: MFTECmd) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 410.00 Tm (    sha256: 4b829ec61b34a9817d8eb44ae36e9dfc2e90fdc8f429eec40127ff34cc2f18da) Tj ET
+BT /F3 8.00 Tf 1 0 0 1 54.00 400.00 Tm (    args: mft_file=/mnt/cases/$MFT, path_filter=rsydow) Tj ET
+
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+xref
+0 14
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000141 00000 n 
+0000000211 00000 n 
+0000000286 00000 n 
+0000000354 00000 n 
+0000004648 00000 n 
+0000004794 00000 n 
+0000009959 00000 n 
+0000010105 00000 n 
+0000015809 00000 n 
+0000015957 00000 n 
+0000019296 00000 n 
+trailer
+<< /Size 14 /Root 1 0 R >>
+startxref
+19444
+%%EOF

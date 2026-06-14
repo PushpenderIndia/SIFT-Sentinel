@@ -24,11 +24,10 @@ def parse_event_logs(ctx: ToolContext, evtx_file: str,
     """
     evtx = str(ctx.resolve_evidence(evtx_file))
 
-    def _parse(raw: str):
-        records = _parse_evtx(raw)
-        if event_id is not None:
-            records = [r for r in records if r.get("event_id") == event_id]
-        return records
+    def _post(records):
+        if event_id is None:
+            return records
+        return [r for r in records if r.get("event_id") == event_id]
 
     return audited_csv_run(
         ctx,
@@ -37,7 +36,11 @@ def parse_event_logs(ctx: ToolContext, evtx_file: str,
         evidence_path=evtx,
         base_argv=["EvtxECmd", "-f", evtx],
         extra_argv=["--csvf", "evtx.csv"],
-        parse=_parse,
+        # Parse the whole .evtx once and cache it; querying a second event_id
+        # against the same Security.evtx (e.g. 4624 then 4625) is then ~free.
+        parse=_parse_evtx,
+        post=_post,
+        cache_family="evtx",
         summarize_kind="evtx",
         summarize=lambda recs, kind: summarize(recs, kind),
     )

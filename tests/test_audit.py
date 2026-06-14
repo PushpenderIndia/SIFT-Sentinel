@@ -44,3 +44,28 @@ def test_audit_ids_resume_across_restart(tmp_path):
     assert [r.call_id for r in reopened.records()] == [
         "call-000001", "call-000002", "call-000003", "call-000004",
     ]
+
+
+def test_duplicate_call_ids_detected(tmp_path):
+    # Simulate the cross-instance collision: two logs resume independently and
+    # both allocate call-000001 against the same file.
+    from sift_sentinel.audit import AuditLog
+    path = tmp_path / "dup.jsonl"
+    a = AuditLog(str(path))
+    cid, start = a.start("get_amcache", {}, None)
+    a.finish(cid, start, "get_amcache", {}, None, end=start + 0.1)
+    b = AuditLog(str(path))  # a separate instance — should resume, but force a clash
+    b._seq = 0  # emulate a buggy resume
+    cid2, start2 = b.start("extract_mft_timeline", {}, None)
+    b.finish(cid2, start2, "extract_mft_timeline", {}, None, end=start2 + 0.1)
+    dups = AuditLog(str(path)).duplicate_call_ids()
+    assert dups == {"call-000001": 2}
+
+
+def test_no_duplicates_on_normal_use(tmp_path):
+    from sift_sentinel.audit import AuditLog
+    log = AuditLog(str(tmp_path / "ok.jsonl"))
+    for _ in range(3):
+        cid, start = log.start("t", {}, None)
+        log.finish(cid, start, "t", {}, None, end=start + 0.1)
+    assert log.duplicate_call_ids() == {}

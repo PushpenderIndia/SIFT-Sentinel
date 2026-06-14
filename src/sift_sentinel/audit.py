@@ -147,3 +147,17 @@ class AuditLog:
                     continue
                 out.append(AuditRecord(**json.loads(line)))
         return out
+
+    def duplicate_call_ids(self) -> dict[str, int]:
+        """Return ``{call_id: count}`` for any call_id logged more than once.
+
+        A ``call_id`` is supposed to identify exactly one tool execution so a
+        finding can cite it unambiguously. Collisions break that contract — they
+        arise when two ``AuditLog`` instances open the same file and each resumes
+        its sequence independently. The report's chain-of-custody check surfaces
+        this; this helper is the detector.
+        """
+        counts: dict[str, int] = {}
+        for r in self.records():
+            counts[r.call_id] = counts.get(r.call_id, 0) + 1
+        return {cid: n for cid, n in counts.items() if n > 1}

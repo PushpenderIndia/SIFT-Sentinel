@@ -105,3 +105,70 @@ def test_parse_yara_extracts_matches_and_skips_detail():
     rules = {r["rule"] for r in recs}
     assert "Mimikatz_Credential_Theft" in rules
     assert all(r["source"] == "yara" for r in recs)
+
+
+def test_parse_event_logs_extracts_attribution_fields():
+    from sift_sentinel.parsers import parse_event_logs as parse_evtx
+    raw = (FIXTURES / "evtx_sample.csv").read_text()
+    recs = parse_evtx(raw)
+    logon = next(r for r in recs if r["event_id"] == 4624)
+    assert logon["account"] == "rsydow-a"
+    assert logon["ip"] == "10.0.0.5"
+    assert logon["logon_type"] == "3"
+    assert logon["workstation"] == "WS01"
+
+    failed = next(r for r in recs if r["event_id"] == 4625)
+    assert failed["account"] == "administrator"
+    assert failed["ip"] == "185.220.101.5"
+
+    svc = next(r for r in recs if r["event_id"] == 7045)
+    assert svc["service_name"] == "PSEXESVC"
+    assert svc["image_path"].endswith("PSEXESVC.exe")
+
+    # An event with no EventData carries no spurious enrichment keys.
+    bare = next(r for r in recs if r["event_id"] == 4672)
+    assert "account" not in bare
+
+
+def test_parse_shimcache():
+    from sift_sentinel.parsers import parse_shimcache
+    raw = (FIXTURES / "shimcache_sample.csv").read_text()
+    recs = parse_shimcache(raw)
+    evil = next(r for r in recs if "evil.exe" in r["path"])
+    assert evil["executed"] is True
+    assert evil["source"] == "shimcache"
+    mk = next(r for r in recs if "mimikatz" in r["path"])
+    assert mk["executed"] is False
+
+
+def test_parse_srum():
+    from sift_sentinel.parsers import parse_srum
+    raw = (FIXTURES / "srum_sample.csv").read_text()
+    recs = parse_srum(raw)
+    evil = next(r for r in recs if "evil.exe" in r["app"])
+    assert evil["bytes_sent"] == 10485760
+    assert evil["source"] == "srum"
+
+
+def test_annotate_known_good():
+    from sift_sentinel.reputation import annotate_known_good
+    recs = [
+        {"name": "a.exe", "sha1": "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709"},
+        {"name": "evil.exe", "sha1": "1111111111111111111111111111111111111111"},
+        {"name": "no_hash.exe", "sha1": None},
+    ]
+    out = annotate_known_good(recs)
+    assert out[0]["known_good"] is True   # built-in seed hash, case-insensitive
+    assert out[1]["known_good"] is False
+    assert out[2]["known_good"] is False  # missing hash is unknown, not good
+
+
+def test_parse_vol_pstree_and_svcscan_and_malfind():
+    from sift_sentinel.parsers import (
+        parse_vol_pstree, parse_vol_svcscan, parse_vol_malfind)
+    tree = parse_vol_pstree("PID,PPID,ImageFileName,CreateTime\n100,4,evil.exe,2018\n")
+    assert tree[0]["pid"] == 100 and tree[0]["ppid"] == 4
+    svc = parse_vol_svcscan("PID,Name,State,Binary\n0,PSEXESVC,Running,C:\\PSEXESVC.exe\n")
+    assert svc[0]["name"] == "PSEXESVC" and svc[0]["binary"].endswith("PSEXESVC.exe")
+    mal = parse_vol_malfind("PID,Process,Protection\n4188,evil.exe,PAGE_EXECUTE_READWRITE\n")
+    assert mal[0]["protection"] == "PAGE_EXECUTE_READWRITE"

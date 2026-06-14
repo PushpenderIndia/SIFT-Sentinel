@@ -278,7 +278,8 @@ def _render_audit_appendix(lay: _Layout, records: list[AuditRecord]) -> None:
 
 
 def _render_integrity(
-    lay: _Layout, cited: set[str], known: set[str]
+    lay: _Layout, cited: set[str], known: set[str],
+    duplicates: Optional[dict[str, int]] = None,
 ) -> None:
     lay.emit("Chain-of-Custody Integrity Check", font=HELV_BOLD, size=13.5, space_before=12)
     missing = sorted(cited - known)
@@ -311,6 +312,17 @@ def _render_integrity(
             size=9,
             space_before=3,
         )
+    if duplicates:
+        lay.emit(
+            f"WARNING: {len(duplicates)} call_id(s) appear more than once in the "
+            "audit log. A call_id must identify exactly one tool execution; "
+            "duplicates make citations ambiguous:",
+            font=HELV_BOLD,
+            size=10,
+            space_before=4,
+        )
+        for cid, n in sorted(duplicates.items()):
+            lay.emit(f"• {cid} x{n}", font=COURIER, size=9, indent=12)
 
 
 # --------------------------------------------------------------------------- #
@@ -324,7 +336,9 @@ def build_report(
     evidence_root: Optional[str],
 ) -> bytes:
     """Assemble the full report PDF and return its bytes."""
-    records = AuditLog(audit_path).records()
+    audit = AuditLog(audit_path)
+    records = audit.records()
+    duplicates = audit.duplicate_call_ids()
     lay = _Layout()
 
     # Header / cover block.
@@ -351,7 +365,7 @@ def build_report(
         )
 
     known = {r.call_id for r in records}
-    _render_integrity(lay, cited, known)
+    _render_integrity(lay, cited, known, duplicates)
     _render_audit_appendix(lay, records)
     return lay.bytes()
 

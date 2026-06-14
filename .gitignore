@@ -8,6 +8,8 @@ dist/
 .venv/
 venv/
 .env
+.claude
+.sift-cache
 
 # Test / coverage
 .pytest_cache/

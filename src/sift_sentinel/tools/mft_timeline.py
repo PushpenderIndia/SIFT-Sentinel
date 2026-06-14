@@ -31,12 +31,11 @@ def extract_mft_timeline(ctx: ToolContext, mft_file: str,
     """
     mft = str(ctx.resolve_evidence(mft_file))
 
-    def _parse(raw: str):
-        records = parse_mft_timeline(raw)
-        if path_filter:
-            needle = path_filter.lower()
-            records = [r for r in records if needle in (r.get("path") or "").lower()]
-        return records
+    def _post(records):
+        if not path_filter:
+            return records
+        needle = path_filter.lower()
+        return [r for r in records if needle in (r.get("path") or "").lower()]
 
     res = audited_csv_run(
         ctx,
@@ -45,7 +44,11 @@ def extract_mft_timeline(ctx: ToolContext, mft_file: str,
         evidence_path=mft,
         base_argv=["MFTECmd", "-f", mft],
         extra_argv=["--csvf", "mft.csv"],
-        parse=_parse,
+        # Parse the whole $MFT once (the 90s cost) and cache it under the file
+        # hash; path_filter is applied to the cached records on every re-run.
+        parse=parse_mft_timeline,
+        post=_post,
+        cache_family="mft",
         summarize_kind="mft",
         summarize=lambda recs, kind: summarize(recs, kind),
     )

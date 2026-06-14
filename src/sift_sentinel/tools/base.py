@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
 from ..audit import AuditLog
+from ..cache import ParseCache
 from ..evidence import assert_within_any, sha256_file
 from ..runner import RunResult, run_tool
 
@@ -65,6 +66,9 @@ class ToolContext:
     # Additional allowed roots (e.g. a RAM capture mounted outside the disk root).
     # The path-traversal guard accepts any of these, never the wider filesystem.
     extra_roots: tuple[Path, ...] = ()
+    # Content-addressed cache of parsed records. Disabled (no-op) by default so
+    # tests with injected runners behave exactly as before; the server enables it.
+    cache: ParseCache = field(default_factory=ParseCache)
 
     def resolve_evidence(self, candidate: str) -> Path:
         """Resolve a tool-supplied path within the configured evidence root(s)."""
@@ -111,6 +115,14 @@ class ToolResult:
         }
 
 
+def _apply_post(
+    records: list[dict[str, Any]],
+    post: Optional[Callable[[list[dict[str, Any]]], list[dict[str, Any]]]],
+) -> list[dict[str, Any]]:
+    """Apply an optional cheap post-filter to a (possibly cached) record set."""
+    return post(records) if post else records
+
+
 def audited_run(
     ctx: ToolContext,
     *,
@@ -121,15 +133,32 @@ def audited_run(
     parse: Callable[[str], list[dict[str, Any]]],
     summarize_kind: str,
     summarize: Callable[[list[dict[str, Any]], str], str],
+    cache_family: Optional[str] = None,
+    post: Optional[Callable[[list[dict[str, Any]]], list[dict[str, Any]]]] = None,
 ) -> ToolResult:
     """Run an allowlisted binary, parse its output, and write one audit record.
 
     This single helper guarantees every tool call is logged with timing, the
     input evidence hash, the binary executed, and an output summary — so the
     audit trail is uniform and complete by construction.
+
+    When ``cache_family`` is set, the *full* parsed record set is cached under the
+    evidence SHA-256: a repeat call on the same bytes skips the subprocess
+    entirely and only re-applies ``post`` (a cheap in-memory filter).
     """
     input_hash = sha256_file(evidence_path) if evidence_path else None
     call_id, start = ctx.audit.start(tool, args, input_hash)
+
+    cached = ctx.cache.get(cache_family, input_hash) if cache_family else None
+    if cached is not None:
+        records = _apply_post(cached, post)
+        summary = summarize(records, summarize_kind)
+        ctx.audit.finish(call_id, start, tool, args, input_hash,
+                         binary=f"cache:{cache_family}", exit_code=0,
+                         output_summary=summary, cache_hit=True)
+        return ToolResult(tool=tool, call_id=call_id, records=records,
+                          summary=summary, input_hash=input_hash,
+                          extra={"cache_hit": True})
 
     try:
         result: RunResult = ctx.runner(argv)
@@ -145,7 +174,10 @@ def audited_run(
         return ToolResult(tool=tool, call_id=call_id, records=[], summary="",
                           input_hash=input_hash, error=err)
 
-    records = parse(result.stdout)
+    full = parse(result.stdout)
+    if cache_family:
+        ctx.cache.put(cache_family, input_hash, full)
+    records = _apply_post(full, post)
     summary = summarize(records, summarize_kind)
     ctx.audit.finish(call_id, start, tool, args, input_hash,
                      binary=result.binary, exit_code=result.exit_code,
@@ -166,6 +198,8 @@ def audited_csv_run(
     summarize: Callable[[list[dict[str, Any]], str], str],
     extra_argv: Sequence[str] = (),
     output_glob: str = "*.csv",
+    cache_family: Optional[str] = None,
+    post: Optional[Callable[[list[dict[str, Any]]], list[dict[str, Any]]]] = None,
 ) -> ToolResult:
     """Audited run for tools that write CSV to a *directory* (Zimmerman tools).
 
@@ -177,9 +211,23 @@ def audited_csv_run(
     If no files are produced (e.g. unit tests inject a fake runner that returns
     ``stdout`` instead of writing files) we fall back to parsing ``result.stdout`` —
     keeping the helper backward-compatible with fixture-based tests.
+
+    ``cache_family``/``post`` behave as in :func:`audited_run`: the full parse is
+    cached under the evidence hash and re-filtered in memory on a repeat call.
     """
     input_hash = sha256_file(evidence_path) if evidence_path else None
     call_id, start = ctx.audit.start(tool, args, input_hash)
+
+    cached = ctx.cache.get(cache_family, input_hash) if cache_family else None
+    if cached is not None:
+        records = _apply_post(cached, post)
+        summary = summarize(records, summarize_kind)
+        ctx.audit.finish(call_id, start, tool, args, input_hash,
+                         binary=f"cache:{cache_family}", exit_code=0,
+                         output_summary=summary, cache_hit=True)
+        return ToolResult(tool=tool, call_id=call_id, records=records,
+                          summary=summary, input_hash=input_hash,
+                          extra={"cache_hit": True})
 
     try:
         with tempfile.TemporaryDirectory(prefix="sift-csv-") as td:
@@ -199,18 +247,21 @@ def audited_csv_run(
                 return ToolResult(tool=tool, call_id=call_id, records=[], summary="",
                                   input_hash=input_hash, error=err)
 
-            records: list[dict[str, Any]] = []
+            full: list[dict[str, Any]] = []
             if csv_files:
                 for f in csv_files:
                     with open(f, encoding="utf-8", errors="replace") as fh:
-                        records.extend(parse(fh.read()))
+                        full.extend(parse(fh.read()))
             else:
-                records = parse(result.stdout)
+                full = parse(result.stdout)
     except Exception as exc:  # pragma: no cover - defensive
         ctx.audit.finish(call_id, start, tool, args, input_hash, error=repr(exc))
         return ToolResult(tool=tool, call_id=call_id, records=[], summary="",
                           input_hash=input_hash, error=repr(exc))
 
+    if cache_family:
+        ctx.cache.put(cache_family, input_hash, full)
+    records = _apply_post(full, post)
     summary = summarize(records, summarize_kind)
     ctx.audit.finish(call_id, start, tool, args, input_hash,
                      binary=result.binary, exit_code=result.exit_code,

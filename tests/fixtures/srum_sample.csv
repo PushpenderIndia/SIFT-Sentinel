@@ -1,0 +1,3 @@
+Timestamp,ExeInfo,UserName,BytesSent,BytesReceived
+2018-09-07 20:30:00,C:\Windows\Temp\evil.exe,rsydow-a,10485760,2048
+2018-09-07 20:31:00,C:\Windows\explorer.exe,rsydow-a,1024,4096

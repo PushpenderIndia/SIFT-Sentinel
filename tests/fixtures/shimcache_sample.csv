@@ -1,0 +1,4 @@
+ControlSet,CacheEntryPosition,Path,LastModifiedTimeUTC,Executed
+1,0,C:\Windows\System32\svchost.exe,2018-04-20 17:45:00,True
+1,1,C:\Windows\Temp\evil.exe,2018-09-07 20:25:00,True
+1,2,C:\Users\rsydow-a\Downloads\mimikatz.exe,2018-09-07 20:20:00,False

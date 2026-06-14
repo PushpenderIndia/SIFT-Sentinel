@@ -57,3 +57,21 @@ def test_main_writes_file(tmp_path):
                "--case", "Demo"])
     assert rc == 0
     assert out.exists() and out.read_bytes().startswith(b"%PDF-1.4")
+
+
+def test_integrity_flags_duplicate_call_ids(tmp_path):
+    from sift_sentinel.audit import AuditLog
+    path = tmp_path / "dup.jsonl"
+    a = AuditLog(str(path))
+    cid, s = a.start("get_amcache", {}, None)
+    a.finish(cid, s, "get_amcache", {}, None, end=s + 0.1)
+    b = AuditLog(str(path))
+    b._seq = 0  # force the same id to be reused
+    cid2, s2 = b.start("extract_mft_timeline", {}, None)
+    b.finish(cid2, s2, "extract_mft_timeline", {}, None, end=s2 + 0.1)
+
+    md = "## Findings\nClaim cites call-000001.\n"
+    pdf = build_report(audit_path=str(path), findings_md=md, case=None,
+                       evidence_root=None)
+    assert b"appear more than once" in pdf
+    assert b"call-000001 x2" in pdf
