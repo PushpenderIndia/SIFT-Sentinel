@@ -27,11 +27,22 @@ from .tools.memory import mem_netscan as _mem_netscan
 from .tools.memory import mem_pslist as _mem_pslist
 from .tools.mft_timeline import extract_mft_timeline as _extract_mft_timeline
 from .tools.prefetch import analyze_prefetch as _analyze_prefetch
+from .tools.registry_autoruns import registry_autoruns as _registry_autoruns
+from .tools.yara_scan import yara_scan as _yara_scan
 
 
-def build_context(evidence_root: str, audit_path: str) -> ToolContext:
+def build_context(evidence_root: str | list[str], audit_path: str) -> ToolContext:
+    """Build the tool context from one or more allowed evidence roots.
+
+    The first root is primary; any extras (e.g. a RAM capture mounted outside the
+    disk root) extend the path-traversal allowlist without widening it to the
+    whole filesystem.
+    """
+    roots = [evidence_root] if isinstance(evidence_root, str) else list(evidence_root)
+    resolved = [Path(r).resolve() for r in roots]
     return ToolContext(
-        evidence_root=Path(evidence_root).resolve(),
+        evidence_root=resolved[0],
+        extra_roots=tuple(resolved[1:]),
         audit=AuditLog(audit_path),
     )
 
@@ -89,6 +100,29 @@ def create_server(ctx: ToolContext):
         return _parse_event_logs(ctx, evtx_file, event_id).to_dict()
 
     @mcp.tool()
+    def registry_autoruns(hive_file: str, plugin: str = "run") -> dict:
+        """Persistence / autostart entries from a registry hive (RegRipper). Read-only.
+
+        Args:
+            hive_file: path to a registry hive (e.g. SOFTWARE, NTUSER.DAT, SYSTEM)
+                inside the evidence root.
+            plugin: RegRipper plugin matching the hive (default ``run`` for
+                Run/RunOnce autostart keys; e.g. ``services`` for SYSTEM).
+        """
+        return _registry_autoruns(ctx, hive_file, plugin).to_dict()
+
+    @mcp.tool()
+    def yara_scan(target: str, rules_file: str) -> dict:
+        """Known-bad signature matches over evidence via YARA. Read-only.
+
+        Args:
+            target: file or directory inside the evidence root to scan
+                (directories are scanned recursively).
+            rules_file: path to a YARA ruleset (.yar/.yara).
+        """
+        return _yara_scan(ctx, target, rules_file).to_dict()
+
+    @mcp.tool()
     def mem_pslist(memory_image: str) -> dict:
         """Processes running at capture time, via Volatility 3. Read-only.
 
@@ -111,13 +145,15 @@ def create_server(ctx: ToolContext):
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="SIFT-Sentinel MCP server")
-    parser.add_argument("--evidence-root", default=os.environ.get("SIFT_EVIDENCE_ROOT", "."),
-                        help="Directory containing mounted, read-only evidence.")
+    parser.add_argument("--evidence-root", action="append", dest="evidence_root",
+                        help="Directory containing mounted, read-only evidence. "
+                             "Repeatable to allow several roots (e.g. disk + RAM capture).")
     parser.add_argument("--audit", default=os.environ.get("SIFT_AUDIT", "audit/execution-log.jsonl"),
                         help="Path to the append-only audit log (JSONL).")
     args = parser.parse_args(argv)
 
-    ctx = build_context(args.evidence_root, args.audit)
+    roots = args.evidence_root or [os.environ.get("SIFT_EVIDENCE_ROOT", ".")]
+    ctx = build_context(roots, args.audit)
     server = create_server(ctx)
     server.run()  # stdio transport
     return 0

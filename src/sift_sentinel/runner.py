@@ -28,7 +28,7 @@ ALLOWED_BINARIES: frozenset[str] = frozenset({
     "MFTECmd.exe", "MFTECmd",
     # registry / execution evidence
     "AmcacheParser.exe", "AmcacheParser",
-    "PECmd.exe", "PECmd",
+    "sccainfo",                          # libscca-tools: Linux-native Prefetch reader (apt)
     "EvtxECmd.exe", "EvtxECmd",
     "rip.pl", "regripper",
     # memory

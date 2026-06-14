@@ -1,0 +1,12 @@
+Launching run v.20200511
+run v.20200511
+(Software) Get autostart key contents from Software hive
+
+Microsoft\Windows\CurrentVersion\Run
+LastWrite Time 2026-06-01 03:14:07Z
+  SecurityHealth - %windir%\system32\SecurityHealthSystray.exe
+  evil - C:\Users\victim\AppData\Local\Temp\evil.exe
+
+Microsoft\Windows\CurrentVersion\RunOnce
+LastWrite Time 2026-06-01 03:15:00Z
+  cleanup -> C:\ProgramData\update.bat

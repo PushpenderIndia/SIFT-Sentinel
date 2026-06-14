@@ -112,3 +112,25 @@ def assert_within(base: str | os.PathLike[str], candidate: str | os.PathLike[str
     if base_r != cand_r and base_r not in cand_r.parents:
         raise ValueError(f"path {cand_r} escapes evidence root {base_r}")
     return cand_r
+
+
+def assert_within_any(
+    bases: Iterable[str | os.PathLike[str]],
+    candidate: str | os.PathLike[str],
+) -> Path:
+    """Resolve ``candidate`` and assert it lies within *any* of ``bases``.
+
+    Evidence is not always under a single mount — e.g. the disk image lives at a
+    read-only ``/mnt/cases`` while the RAM capture sits at ``/evidence``. This keeps
+    the path-traversal guard a tight explicit allowlist (only the configured roots
+    are reachable) rather than widening it to the whole filesystem.
+    """
+    bases_r = [Path(b).resolve() for b in bases]
+    if not bases_r:
+        raise ValueError("no evidence roots configured")
+    cand_r = Path(candidate).resolve()
+    for base_r in bases_r:
+        if base_r == cand_r or base_r in cand_r.parents:
+            return cand_r
+    roots = ", ".join(str(b) for b in bases_r)
+    raise ValueError(f"path {cand_r} escapes evidence root(s) {roots}")

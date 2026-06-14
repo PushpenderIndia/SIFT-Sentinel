@@ -26,3 +26,21 @@ def test_audit_ids_increment(tmp_path):
     c2, s2 = log.start("b", {}, None, now=0.0)
     log.finish(c2, s2, "b", {}, None, end=0.0)
     assert [r.call_id for r in log.records()] == ["call-000001", "call-000002"]
+
+
+def test_audit_ids_resume_across_restart(tmp_path):
+    path = tmp_path / "exec.jsonl"
+    log = AuditLog(path)
+    for _ in range(3):
+        cid, s = log.start("a", {}, None, now=0.0)
+        log.finish(cid, s, "a", {}, None, end=0.0)
+
+    # A fresh AuditLog over the same file (e.g. server restart) must not reuse ids.
+    reopened = AuditLog(path)
+    cid, s = reopened.start("b", {}, None, now=0.0)
+    assert cid == "call-000004"
+    log_done = reopened.finish(cid, s, "b", {}, None, end=0.0)
+    assert log_done.call_id == "call-000004"
+    assert [r.call_id for r in reopened.records()] == [
+        "call-000001", "call-000002", "call-000003", "call-000004",
+    ]

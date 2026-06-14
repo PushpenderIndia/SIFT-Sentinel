@@ -1,0 +1,17 @@
+sccainfo 20250915
+
+Windows Prefetch File information:
+	Filename: EVIL.EXE-12AB34CD.pf
+
+	Format version: 30
+	Executable filename: EVIL.EXE
+	Hash value: 0x12AB34CD
+	Last run time: 2026-06-01 03:14:10.1234567
+	Run count: 3
+
+	Number of volumes: 1
+
+	Volume: 1
+		Device path: \DEVICE\HARDDISKVOLUME2
+		Creation date: 2018-01-01 00:00:00
+		Serial number: 0x12345678

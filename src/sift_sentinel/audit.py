@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 import time
 from dataclasses import dataclass, field, asdict
@@ -57,11 +58,38 @@ class AuditLog:
     orchestrator to report.
     """
 
+    _ID_RE = re.compile(r"^call-(\d+)$")
+
     def __init__(self, path: str | os.PathLike[str]):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
-        self._seq = 0
+        self._seq = self._resume_seq()
+
+    def _resume_seq(self) -> int:
+        """Continue id numbering from an existing log.
+
+        Without this, every server restart begins again at ``call-000001`` and
+        the new ids collide with old ones — breaking the citation contract, since
+        a finding's ``call_id`` would no longer point to a unique tool execution.
+        We scan the existing log and resume from the highest id seen.
+        """
+        if not self.path.exists():
+            return 0
+        max_seq = 0
+        with self.path.open("r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    call_id = json.loads(line).get("call_id", "")
+                except (ValueError, TypeError):
+                    continue
+                m = self._ID_RE.match(call_id or "")
+                if m:
+                    max_seq = max(max_seq, int(m.group(1)))
+        return max_seq
 
     def _next_id(self) -> str:
         self._seq += 1

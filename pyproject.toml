@@ -21,6 +21,7 @@ dev = [
 
 [project.scripts]
 sift-sentinel-server = "sift_sentinel.mcp_server:main"
+sift-sentinel-report = "sift_sentinel.report:main"
 
 [build-system]
 requires = ["hatchling"]

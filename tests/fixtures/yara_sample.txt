@@ -1,0 +1,3 @@
+Mimikatz_Credential_Theft /mnt/cases/Users/victim/Downloads/mimikatz.exe
+Generic_Dropper C:\Users\victim\AppData\Local\Temp\evil.exe
+0x1a4:$pattern: 73 65 6b 75 72 6c 73 61

@@ -10,14 +10,13 @@ confidence model rewards.
 """
 from __future__ import annotations
 
-from ..evidence import assert_within
 from ..parsers import parse_vol_netscan, parse_vol_pslist, summarize
 from .base import ToolContext, ToolResult, audited_run
 
 
 def mem_pslist(ctx: ToolContext, memory_image: str) -> ToolResult:
     """Volatility 3 ``windows.pslist`` over a RAM capture."""
-    mem = str(assert_within(ctx.evidence_root, memory_image))
+    mem = str(ctx.resolve_evidence(memory_image))
     argv = ["vol", "-q", "-r", "csv", "-f", mem, "windows.pslist"]
     return audited_run(
         ctx,
@@ -33,7 +32,7 @@ def mem_pslist(ctx: ToolContext, memory_image: str) -> ToolResult:
 
 def mem_netscan(ctx: ToolContext, memory_image: str) -> ToolResult:
     """Volatility 3 ``windows.netscan`` over a RAM capture."""
-    mem = str(assert_within(ctx.evidence_root, memory_image))
+    mem = str(ctx.resolve_evidence(memory_image))
     argv = ["vol", "-q", "-r", "csv", "-f", mem, "windows.netscan"]
     return audited_run(
         ctx,
