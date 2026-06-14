@@ -11,8 +11,8 @@ read-only functions, and by parsing raw tool output into compact JSON before the
 model ever sees it.
 
 Architecture: Custom MCP Server (the trust boundary) plus Claude Code as the
-reasoning agent. Eight read-only forensic tools, 38 tests that run with no real
-SIFT tools and no API key.
+reasoning agent. Eighteen read-only forensic tools, structured parsers, artifact
+caching, and a test suite that runs with no real SIFT tools and no API key.
 
 ## Inspiration
 
@@ -64,6 +64,9 @@ Accuracy and output handling:
 
 - Raw tool output is parsed into compact, typed JSON records before it reaches
   the model. The model never sees a multi-megabyte CSV.
+- Parsed-artifact caching is keyed by evidence SHA-256. Expensive MFT, EVTX,
+  Amcache, ShimCache, and SRUM parses are reused safely when the same evidence
+  is queried again with a different filter.
 - A byte budget caps the serialized record payload of every response
   (`SIFT_MAX_BYTES`, default 60 KB) in addition to a record-count cap
   (`SIFT_MAX_RECORDS`), so no single call can overrun the transport.
@@ -74,6 +77,9 @@ Accuracy and output handling:
   executables.
 - Narrowing parameters (`path_filter`, `event_id`) let the agent re-run focused
   queries during self-correction instead of re-dumping everything.
+- Event-log parsing extracts actor fields from EVTX payloads: target account,
+  subject account, source IP, workstation, logon type, service name, image path,
+  and PowerShell script-block text.
 - The CSV parser tolerates ragged rows from the underlying tools rather than
   crashing on them.
 
@@ -85,6 +91,8 @@ Reasoning discipline:
 - Multi-source correlation across disk and memory (for example a netscan C2
   connection tied to a PID whose binary the MFT shows was dropped seconds
   earlier).
+- A super-timeline merges MFT, Amcache, ShimCache, EVTX, and Prefetch records
+  into one time-ordered view for incident-window correlation.
 - Senior-analyst instructions in `CLAUDE.md` and a `/triage` workflow that set
   the sequencing, corroboration, and citation rules.
 
@@ -93,6 +101,8 @@ Auditability and output:
 - Append-only JSONL audit log, one record per tool call, with timestamp,
   arguments, input hash, binary executed, and an output summary. Any finding
   traces back to a `call_id`.
+- Report generation checks for missing or duplicate `call_id` references so
+  citations remain unambiguous.
 - Offline report generation (`sift-sentinel-report`) renders a findings document
   from the narrative plus the audit log, after the investigation.
 - A benchmark harness (`benchmark/score.py`) scores findings against ground
@@ -102,30 +112,47 @@ Operations:
 
 - Runs on a stock SIFT Workstation. Prefetch uses `sccainfo` (libscca) and the
   registry uses `rip.pl` (RegRipper), so no Windows runtime is needed.
+- Adds Linux-friendly wrappers around common Zimmerman and Volatility outputs:
+  AppCompatCacheParser, SrumECmd, EvtxECmd, AmcacheParser, MFTECmd, YARA, and
+  Volatility 3.
 - Graceful degradation. For example, an empty Prefetch directory on a domain
   controller, or a missing YARA rules file, returns a clear message rather than
   an error dump.
+- Independent broad-sweep calls can run concurrently through a thread-pool
+  helper while preserving append-only audit records.
 - One-step `install.sh` that sets up a virtualenv, installs dependencies and
   `yara`, and registers the MCP server with Claude Code.
-- 38 tests that run with no real SIFT tools and no API key, using captured
-  fixtures and an injected fake runner.
+- Tests run with no real SIFT tools and no API key, using captured fixtures and
+  an injected fake runner.
 
-## Eight tools exposed to Claude Code
+## Tools exposed to Claude Code
 
 | Tool | Underlying binary | Forensic question |
 |---|---|---|
 | `extract_mft_timeline` | MFTECmd | When were files created or modified? |
-| `get_amcache` | AmcacheParser | What programs executed or were present? |
+| `get_amcache` | AmcacheParser | What programs executed or were present? Optionally suppress known-good hashes. |
 | `analyze_prefetch` | libscca (`sccainfo`) | Execution count and last-run times |
-| `parse_event_logs` | EvtxECmd | Logons (4624/4625), service installs (7045), PowerShell |
+| `shimcache` | AppCompatCacheParser | Binary presence/execution evidence when Prefetch is absent |
+| `srum` | SrumECmd | Per-app resource usage, network bytes, and exfiltration signals |
+| `parse_event_logs` | EvtxECmd | Security, service-install, and PowerShell events with actor fields extracted |
+| `logon_summary` | EvtxECmd | 4624/4625 logons grouped by account, source IP, and logon type |
+| `powershell_logs` | EvtxECmd | PowerShell 4103/4104 command and script-block activity |
 | `registry_autoruns` | RegRipper (`rip.pl`) | Persistence and autostart entries |
 | `yara_scan` | YARA | Known-bad signature matches over evidence |
+| `read_artifact` | Internal read-only reader | Text artifacts such as PowerShell transcripts, hashed and audited |
 | `mem_pslist` | Volatility 3 | Processes running at RAM-capture time |
+| `mem_pstree` | Volatility 3 | Parent/child process relationships |
+| `mem_cmdline` | Volatility 3 | Per-process command lines |
 | `mem_netscan` | Volatility 3 | Network connections / C2 signal |
+| `mem_malfind` | Volatility 3 | Injected or unbacked executable memory regions |
+| `mem_svcscan` | Volatility 3 | Services resident in memory and their binaries |
+| `super_timeline` | Internal correlation | Time-ordered view across disk, execution, and event artifacts |
 
 Adding a tool is a small change to the trust boundary: one entry in
 `tools/registry.py` and one allowlist entry in `runner.ALLOWED_BINARIES`. That
-registry is the agent's entire action space.
+registry is the agent's entire action space. Internal tools such as
+`read_artifact` and `super_timeline` still pass through the same path, hash, and
+audit controls even though they do not spawn an external binary.
 
 ## Architecture
 
@@ -144,6 +171,7 @@ registry is the agent's entire action space.
 |  - SHA-256 hash before/after every call                     |
 |  - allowlist-only subprocess runner (no shell=True)         |
 |  - parses raw output to compact JSON                        |
+|  - caches parsed artifacts by evidence SHA-256              |
 |  - digests very large results instead of dumping them       |
 |  - appends one record per call to execution-log.jsonl       |
 +----------------------------+--------------------------------+
@@ -152,7 +180,8 @@ registry is the agent's entire action space.
 +-------------------------------------------------------------+
 |   SIFT WORKSTATION TOOLS                                     |
 |   MFTECmd, AmcacheParser, libscca, EvtxECmd,                 |
-|   RegRipper, YARA, Volatility 3                              |
+|   AppCompatCacheParser, SrumECmd, RegRipper,                 |
+|   YARA, Volatility 3                                         |
 +----------------------------+--------------------------------+
                             v
                    EVIDENCE (mounted read-only)
@@ -288,6 +317,9 @@ sudo 7z x /path/to/base-dc-memory.7z -o/evidence/
 Artifacts then live at `/mnt/cases/$MFT`,
 `/mnt/cases/Windows/appcompat/Programs/Amcache.hve`,
 `/mnt/cases/Windows/Prefetch/`,
+`/mnt/cases/Windows/System32/config/SYSTEM`,
+`/mnt/cases/Windows/System32/config/SOFTWARE`,
+`/mnt/cases/Windows/System32/sru/SRUDB.dat`,
 `/mnt/cases/Windows/System32/winevt/Logs/`, and `/evidence/<memory>.img`.
 
 ### 3. Triage
@@ -303,7 +335,7 @@ sources and flag anything CONFIRMED. Cite the call_id for every finding.
 ### 4. Test
 ```bash
 source .venv/bin/activate
-pytest            # 38 tests, no forensic tools or API key required
+pytest            # no forensic tools or API key required
 ```
 
 ## Required deliverables
@@ -327,30 +359,38 @@ src/sift_sentinel/
   runner.py              allowlist-only subprocess chokepoint (no shell=True)
   evidence.py            read-only handling, SHA-256 check, path-traversal guard
   audit.py               append-only JSONL audit log (one record per tool call)
+  cache.py               SHA-256-keyed parsed-artifact cache
+  concurrency.py         concurrent broad-sweep helper for independent tools
+  correlate.py           super-timeline normalization and merge logic
   confidence.py          CONFIRMED / INFERRED / UNCERTAIN / CONTRADICTION model
   parsers.py             raw tool output to compact JSON, plus the MFT digest
+  reputation.py          known-good hash annotation for execution artifacts
   report.py              offline findings report (not an MCP tool, by design)
   tools/
     base.py              shared plumbing: audited run, byte budget, result type
-    amcache.py           get_amcache
+    amcache.py           get_amcache, known-good suppression, cache reuse
     mft_timeline.py      extract_mft_timeline (with digest mode)
     prefetch.py          analyze_prefetch
-    event_logs.py        parse_event_logs
+    event_logs.py        parse_event_logs, actor-field extraction
+    logon_summary.py     aggregate 4624/4625 logons by actor tuple
+    powershell_logs.py   PowerShell 4103/4104 command logs
+    shimcache.py         AppCompatCache / ShimCache
+    srum.py              SRUM application resource usage
+    read_artifact.py     audited read-only text artifact reader
+    super_timeline.py    correlated chronological view across artifacts
     registry_autoruns.py registry_autoruns
     yara_scan.py         yara_scan
-    memory.py            mem_pslist / mem_netscan
+    memory.py            pslist / pstree / cmdline / netscan / malfind / svcscan
     registry.py          the action space, single source of truth
   benchmark/score.py     accuracy vs. ground truth and vs. the Protocol SIFT baseline
 CLAUDE.md                analyst instructions Claude Code follows during triage
-tests/                   38 tests, all run without real SIFT tools or API keys
+tests/                   tests and fixtures for parsers, tools, reports, cache, correlation
 ```
 
 ## What's next
 
-- Add a dedicated persistence and signature phase to the `/triage` workflow that
-  uses `registry_autoruns` and `yara_scan`.
-- Extend digest mode to other high-volume sources such as event logs and a
-  super-timeline.
+- Add more curated digests for high-volume EVTX and SRUM sources.
+- Expand known-good reputation data beyond the built-in hash list.
 - Publish accuracy and hallucination-rate numbers against the Protocol SIFT
   baseline.
 
