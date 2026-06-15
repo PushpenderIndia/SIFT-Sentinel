@@ -19,7 +19,7 @@ caching, and a test suite that runs with no real SIFT tools and no API key.
 A screencast of a live triage run — terminal execution with narration, including
 a self-correction sequence.
 
-[![Watch the demo](https://img.youtube.com/vi/G-Joj5jwE7Y/maxresdefault.jpg)](https://youtu.be/G-Joj5jwE7Y)
+[![IMAGE_ALT](https://img.youtube.com/vi/G-Joj5jwE7Y/0.jpg)](https://youtu.be/G-Joj5jwE7Y)
 
 ▶️ **Watch on YouTube:** https://youtu.be/G-Joj5jwE7Y
 Raw video file in this repo: [`docs/demo_video.mp4`](docs/demo_video.mp4)
