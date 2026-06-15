@@ -32,8 +32,10 @@ def yara_scan(ctx: ToolContext, target: str, rules_file: str) -> ToolResult:
     if not rules.is_file():
         call_id, start = ctx.audit.start(TOOL, args, input_hash=None)
         msg = f"rules file not found: {rules_file}"
-        ctx.audit.finish(call_id, start, TOOL, args, input_hash=None, error=msg)
-        return ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg, error=msg)
+        res = ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg, error=msg)
+        ctx.audit.finish(call_id, start, TOOL, args, input_hash=None,
+                         tokens=res.response_tokens(), error=msg)
+        return res
 
     argv = ["yara", "-w"]
     if tgt.is_dir():

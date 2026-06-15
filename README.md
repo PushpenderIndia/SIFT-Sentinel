@@ -110,8 +110,15 @@ Reasoning discipline:
 Auditability and output:
 
 - Append-only JSONL audit log, one record per tool call, with timestamp,
-  arguments, input hash, binary executed, and an output summary. Any finding
-  traces back to a `call_id`.
+  arguments, input hash, binary executed, duration, an output summary, and a
+  per-call token count. Any finding traces back to a `call_id`.
+- The `tokens` field is the estimated size, in tokens, of the response payload
+  that call returned into the agent's context. A read-only MCP server never sees
+  the model's own prompt/completion usage, so rather than invent that number we
+  record the one token cost we can measure honestly at the trust boundary —
+  estimated deterministically and offline (`sift_sentinel/tokens.py`), over the
+  exact payload the agent receives (after the byte budget and MFT digest). It is
+  the per-call cost an operator uses to reason about context budget.
 - Report generation checks for missing or duplicate `call_id` references so
   citations remain unambiguous.
 - Offline report generation (`sift-sentinel-report`) renders a findings document

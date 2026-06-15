@@ -64,12 +64,13 @@ def super_timeline(
             "prefetch_path": prefetch_path, "time_prefix": time_prefix}
     call_id, start = ctx.audit.start(TOOL, args, input_hash=None)
     summary = summarize(rows, "super_timeline")
-    ctx.audit.finish(call_id, start, TOOL, args, input_hash=None,
-                     binary="super_timeline", exit_code=0, output_summary=summary,
-                     contributing_calls=contributing)
-    return ToolResult(
+    res = ToolResult(
         tool=TOOL, call_id=call_id, records=rows, summary=summary,
         extra={"contributing_calls": contributing,
                "sources": sorted(sources.keys()),
                "time_prefix": time_prefix},
     )
+    ctx.audit.finish(call_id, start, TOOL, args, input_hash=None,
+                     binary="super_timeline", exit_code=0, output_summary=summary,
+                     tokens=res.response_tokens(), contributing_calls=contributing)
+    return res

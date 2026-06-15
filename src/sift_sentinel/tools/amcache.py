@@ -34,7 +34,13 @@ def get_amcache(ctx: ToolContext, amcache_hive: str,
             return [r for r in annotated if not r["known_good"]]
         return annotated
 
-    res = audited_csv_run(
+    def _finalize(res):
+        good = sum(1 for r in res.records if r.get("known_good"))
+        res.extra = {**res.extra, "known_good_count": good,
+                     "suppress_known_good": suppress_known_good}
+        return res
+
+    return audited_csv_run(
         ctx,
         tool=TOOL,
         args={"amcache_hive": amcache_hive,
@@ -45,12 +51,10 @@ def get_amcache(ctx: ToolContext, amcache_hive: str,
         output_glob="*FileEntries*.csv",
         parse=parse_amcache,
         post=_post,
+        # Tally known-good inside the audited boundary so the logged token count
+        # reflects the enriched payload the agent actually receives.
+        finalize=_finalize,
         cache_family="amcache",
         summarize_kind="amcache",
         summarize=lambda recs, kind: summarize(recs, kind),
     )
-    if not res.error:
-        good = sum(1 for r in res.records if r.get("known_good"))
-        res.extra = {**res.extra, "known_good_count": good,
-                     "suppress_known_good": suppress_known_good}
-    return res

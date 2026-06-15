@@ -42,8 +42,10 @@ def read_artifact(ctx: ToolContext, artifact_path: str,
     if not path.is_file():
         call_id, start = ctx.audit.start(TOOL, args, input_hash=None)
         msg = f"not a file: {artifact_path}"
-        ctx.audit.finish(call_id, start, TOOL, args, input_hash=None, error=msg)
-        return ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg, error=msg)
+        res = ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg, error=msg)
+        ctx.audit.finish(call_id, start, TOOL, args, input_hash=None,
+                         tokens=res.response_tokens(), error=msg)
+        return res
 
     input_hash = sha256_file(path)
     call_id, start = ctx.audit.start(TOOL, args, input_hash)
@@ -60,10 +62,12 @@ def read_artifact(ctx: ToolContext, artifact_path: str,
             text = blob.decode("utf-16")  # PowerShell transcripts are often UTF-16
         except UnicodeDecodeError:
             msg = "artifact is not UTF-8/UTF-16 text; read_artifact handles text only"
+            res = ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg,
+                             input_hash=input_hash, error=msg)
             ctx.audit.finish(call_id, start, TOOL, args, input_hash,
-                             binary="read_artifact", error=msg)
-            return ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg,
-                              input_hash=input_hash, error=msg)
+                             binary="read_artifact", tokens=res.response_tokens(),
+                             error=msg)
+            return res
 
     lines = text.splitlines()
     records = [{"line_no": i + 1, "text": ln, "source": "artifact"}
@@ -77,14 +81,13 @@ def read_artifact(ctx: ToolContext, artifact_path: str,
     }
     if not integrity["input_hash_intact"]:
         msg = "evidence hash changed during read_artifact call"
+        res = ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg,
+                         input_hash=input_hash, error=msg, extra=integrity)
         ctx.audit.finish(call_id, start, TOOL, args, input_hash,
-                         binary="read_artifact", error=msg, **integrity)
-        return ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg,
-                          input_hash=input_hash, error=msg, extra=integrity)
-    ctx.audit.finish(call_id, start, TOOL, args, input_hash,
-                     binary="read_artifact", exit_code=0, output_summary=summary,
-                     **integrity)
-    return ToolResult(
+                         binary="read_artifact", error=msg,
+                         tokens=res.response_tokens(), **integrity)
+        return res
+    res = ToolResult(
         tool=TOOL, call_id=call_id, records=records, summary=summary,
         input_hash=input_hash,
         extra={"bytes_total": size, "bytes_read": len(blob),
@@ -92,3 +95,7 @@ def read_artifact(ctx: ToolContext, artifact_path: str,
                "truncated": truncated or len(lines) > MAX_LINES,
                **integrity},
     )
+    ctx.audit.finish(call_id, start, TOOL, args, input_hash,
+                     binary="read_artifact", exit_code=0, output_summary=summary,
+                     tokens=res.response_tokens(), **integrity)
+    return res

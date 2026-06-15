@@ -37,9 +37,11 @@ def _validate_image(ctx: ToolContext, tool: str, memory_image: str):
         err = f"memory image is empty (0 bytes): {memory_image} — capture likely failed"
     if err:
         call_id, start = ctx.audit.start(tool, args, input_hash=None)
-        ctx.audit.finish(call_id, start, tool, args, input_hash=None, error=err)
-        return str(mem), ToolResult(tool=tool, call_id=call_id, records=[],
-                                    summary=err, error=err)
+        res = ToolResult(tool=tool, call_id=call_id, records=[],
+                         summary=err, error=err)
+        ctx.audit.finish(call_id, start, tool, args, input_hash=None,
+                         tokens=res.response_tokens(), error=err)
+        return str(mem), res
     return str(mem), None
 
 

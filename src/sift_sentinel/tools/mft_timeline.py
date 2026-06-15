@@ -37,7 +37,34 @@ def extract_mft_timeline(ctx: ToolContext, mft_file: str,
         needle = path_filter.lower()
         return [r for r in records if needle in (r.get("path") or "").lower()]
 
-    res = audited_csv_run(
+    def _finalize(res):
+        # A narrow (filtered) or small timeline is returned verbatim. An unfiltered
+        # full $MFT (200k+ rows) is condensed to a triage digest so the agent gets
+        # the forensically-interesting records instead of a head-of-list dump of
+        # metadata files. Done inside the audited boundary so the logged token
+        # count reflects the digest the agent actually receives; the audit's
+        # output_summary still records the complete pre-digest summary.
+        if path_filter or len(res.records) <= DIGEST_THRESHOLD:
+            return res
+        digest = mft_digest(res.records)
+        res.extra = {
+            "mode": "digest",
+            "total": digest["total"],
+            "deleted": digest["deleted"],
+            "interesting_count": digest["interesting_count"],
+            "created_by_month": digest["created_by_month"],
+            "note": (
+                "Unfiltered timeline digested: 'records' holds the forensically-"
+                "interesting entries (executables in user-writable paths, deleted "
+                "executables, ADS, double extensions). Re-run with path_filter to "
+                "enumerate a specific directory in full."
+            ),
+        }
+        res.records = digest["interesting"]
+        res.summary = summarize(res.records, "mft-digest")
+        return res
+
+    return audited_csv_run(
         ctx,
         tool=TOOL,
         args={"mft_file": mft_file, "path_filter": path_filter},
@@ -48,32 +75,8 @@ def extract_mft_timeline(ctx: ToolContext, mft_file: str,
         # hash; path_filter is applied to the cached records on every re-run.
         parse=parse_mft_timeline,
         post=_post,
+        finalize=_finalize,
         cache_family="mft",
         summarize_kind="mft",
         summarize=lambda recs, kind: summarize(recs, kind),
     )
-
-    # A narrow (filtered) or small timeline is returned verbatim. An unfiltered
-    # full $MFT (200k+ rows) is condensed to a triage digest so the agent gets the
-    # forensically-interesting records instead of a head-of-list dump of metadata
-    # files. The audit log already captured the complete summary above.
-    if res.error or path_filter or len(res.records) <= DIGEST_THRESHOLD:
-        return res
-
-    digest = mft_digest(res.records)
-    res.extra = {
-        "mode": "digest",
-        "total": digest["total"],
-        "deleted": digest["deleted"],
-        "interesting_count": digest["interesting_count"],
-        "created_by_month": digest["created_by_month"],
-        "note": (
-            "Unfiltered timeline digested: 'records' holds the forensically-"
-            "interesting entries (executables in user-writable paths, deleted "
-            "executables, ADS, double extensions). Re-run with path_filter to "
-            "enumerate a specific directory in full."
-        ),
-    }
-    res.records = digest["interesting"]
-    res.summary = summarize(res.records, "mft-digest")
-    return res

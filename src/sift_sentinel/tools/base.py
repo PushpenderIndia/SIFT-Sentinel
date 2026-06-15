@@ -13,6 +13,7 @@ from ..audit import AuditLog
 from ..cache import ParseCache
 from ..evidence import assert_within_any, sha256_file
 from ..runner import RunResult, run_tool
+from ..tokens import estimate_tokens
 
 
 # A runner is anything that takes argv -> RunResult. Injectable for tests.
@@ -87,6 +88,15 @@ class ToolResult:
     error: Optional[str] = None
     extra: dict[str, Any] = field(default_factory=dict)
 
+    def response_tokens(self) -> int:
+        """Estimated tokens of the exact payload this call returns to the agent.
+
+        Measured over :meth:`to_dict` (after the row cap and byte budget are
+        applied) so it reflects what the model actually ingests, not the full
+        pre-truncation record set. Recorded in the audit log's ``tokens`` field.
+        """
+        return estimate_tokens(self.to_dict())
+
     def to_dict(self) -> dict[str, Any]:
         total = len(self.records)
         cap = MAX_RESPONSE_RECORDS
@@ -152,6 +162,7 @@ def audited_run(
     summarize: Callable[[list[dict[str, Any]], str], str],
     cache_family: Optional[str] = None,
     post: Optional[Callable[[list[dict[str, Any]]], list[dict[str, Any]]]] = None,
+    finalize: Optional[Callable[["ToolResult"], "ToolResult"]] = None,
 ) -> ToolResult:
     """Run an allowlisted binary, parse its output, and write one audit record.
 
@@ -162,6 +173,12 @@ def audited_run(
     When ``cache_family`` is set, the *full* parsed record set is cached under the
     evidence SHA-256: a repeat call on the same bytes skips the subprocess
     entirely and only re-applies ``post`` (a cheap in-memory filter).
+
+    ``finalize`` lets a caller transform the *successful* result (e.g. enrich
+    ``extra`` or condense to a digest) before the audit record is written. It runs
+    inside the audited boundary so the logged ``tokens`` reflect the payload the
+    agent actually receives, not a pre-transform intermediate. The canonical
+    ``output_summary`` is still recorded from the full pre-finalize summary.
     """
     input_hash = sha256_file(evidence_path) if evidence_path else None
     call_id, start = ctx.audit.start(tool, args, input_hash)
@@ -171,33 +188,41 @@ def audited_run(
         records = _apply_post(cached, post)
         summary = summarize(records, summarize_kind)
         integrity = _hash_check_extra(evidence_path, input_hash)
-        ctx.audit.finish(call_id, start, tool, args, input_hash,
-                         binary=f"cache:{cache_family}", exit_code=0,
-                         output_summary=summary, cache_hit=True, **integrity)
         if integrity.get("input_hash_intact") is False:
             err = "evidence hash changed during cached tool call"
-            return ToolResult(tool=tool, call_id=call_id, records=[],
-                              summary=err, input_hash=input_hash, error=err,
-                              extra={"cache_hit": True, **integrity})
-        return ToolResult(tool=tool, call_id=call_id, records=records,
-                          summary=summary, input_hash=input_hash,
-                          extra={"cache_hit": True, **integrity})
+            res = ToolResult(tool=tool, call_id=call_id, records=[],
+                             summary=err, input_hash=input_hash, error=err,
+                             extra={"cache_hit": True, **integrity})
+        else:
+            res = ToolResult(tool=tool, call_id=call_id, records=records,
+                             summary=summary, input_hash=input_hash,
+                             extra={"cache_hit": True, **integrity})
+            if finalize:
+                res = finalize(res)
+        ctx.audit.finish(call_id, start, tool, args, input_hash,
+                         binary=f"cache:{cache_family}", exit_code=0,
+                         output_summary=summary, tokens=res.response_tokens(),
+                         cache_hit=True, **integrity)
+        return res
 
     try:
         result: RunResult = ctx.runner(argv)
     except Exception as exc:  # binary missing, disallowed, etc.
-        ctx.audit.finish(call_id, start, tool, args, input_hash, error=repr(exc))
-        return ToolResult(tool=tool, call_id=call_id, records=[], summary="",
-                          input_hash=input_hash, error=repr(exc))
+        res = ToolResult(tool=tool, call_id=call_id, records=[], summary="",
+                         input_hash=input_hash, error=repr(exc))
+        ctx.audit.finish(call_id, start, tool, args, input_hash,
+                         tokens=res.response_tokens(), error=repr(exc))
+        return res
 
     if result.exit_code != 0 and not result.stdout:
         err = result.stderr.strip() or f"exit code {result.exit_code}"
         integrity = _hash_check_extra(evidence_path, input_hash)
+        res = ToolResult(tool=tool, call_id=call_id, records=[], summary="",
+                         input_hash=input_hash, error=err, extra=integrity)
         ctx.audit.finish(call_id, start, tool, args, input_hash,
                          binary=result.binary, exit_code=result.exit_code, error=err,
-                         **integrity)
-        return ToolResult(tool=tool, call_id=call_id, records=[], summary="",
-                          input_hash=input_hash, error=err, extra=integrity)
+                         tokens=res.response_tokens(), **integrity)
+        return res
 
     full = parse(result.stdout)
     if cache_family:
@@ -207,16 +232,21 @@ def audited_run(
     integrity = _hash_check_extra(evidence_path, input_hash)
     if integrity.get("input_hash_intact") is False:
         err = "evidence hash changed during tool call"
+        res = ToolResult(tool=tool, call_id=call_id, records=[], summary=err,
+                         input_hash=input_hash, error=err, extra=integrity)
         ctx.audit.finish(call_id, start, tool, args, input_hash,
                          binary=result.binary, exit_code=result.exit_code,
-                         output_summary=summary, error=err, **integrity)
-        return ToolResult(tool=tool, call_id=call_id, records=[], summary=err,
-                          input_hash=input_hash, error=err, extra=integrity)
+                         output_summary=summary, error=err,
+                         tokens=res.response_tokens(), **integrity)
+        return res
+    res = ToolResult(tool=tool, call_id=call_id, records=records, summary=summary,
+                     input_hash=input_hash, extra=integrity)
+    if finalize:
+        res = finalize(res)
     ctx.audit.finish(call_id, start, tool, args, input_hash,
                      binary=result.binary, exit_code=result.exit_code,
-                     output_summary=summary, **integrity)
-    return ToolResult(tool=tool, call_id=call_id, records=records, summary=summary,
-                      input_hash=input_hash, extra=integrity)
+                     output_summary=summary, tokens=res.response_tokens(), **integrity)
+    return res
 
 
 def audited_csv_run(
@@ -233,6 +263,7 @@ def audited_csv_run(
     output_glob: str = "*.csv",
     cache_family: Optional[str] = None,
     post: Optional[Callable[[list[dict[str, Any]]], list[dict[str, Any]]]] = None,
+    finalize: Optional[Callable[["ToolResult"], "ToolResult"]] = None,
 ) -> ToolResult:
     """Audited run for tools that write CSV to a *directory* (Zimmerman tools).
 
@@ -245,8 +276,10 @@ def audited_csv_run(
     ``stdout`` instead of writing files) we fall back to parsing ``result.stdout`` —
     keeping the helper backward-compatible with fixture-based tests.
 
-    ``cache_family``/``post`` behave as in :func:`audited_run`: the full parse is
-    cached under the evidence hash and re-filtered in memory on a repeat call.
+    ``cache_family``/``post``/``finalize`` behave as in :func:`audited_run`: the
+    full parse is cached under the evidence hash and re-filtered in memory on a
+    repeat call, and ``finalize`` transforms the successful result inside the
+    audited boundary so the logged ``tokens`` match the agent-facing payload.
     """
     input_hash = sha256_file(evidence_path) if evidence_path else None
     call_id, start = ctx.audit.start(tool, args, input_hash)
@@ -256,17 +289,22 @@ def audited_csv_run(
         records = _apply_post(cached, post)
         summary = summarize(records, summarize_kind)
         integrity = _hash_check_extra(evidence_path, input_hash)
-        ctx.audit.finish(call_id, start, tool, args, input_hash,
-                         binary=f"cache:{cache_family}", exit_code=0,
-                         output_summary=summary, cache_hit=True, **integrity)
         if integrity.get("input_hash_intact") is False:
             err = "evidence hash changed during cached tool call"
-            return ToolResult(tool=tool, call_id=call_id, records=[],
-                              summary=err, input_hash=input_hash, error=err,
-                              extra={"cache_hit": True, **integrity})
-        return ToolResult(tool=tool, call_id=call_id, records=records,
-                          summary=summary, input_hash=input_hash,
-                          extra={"cache_hit": True, **integrity})
+            res = ToolResult(tool=tool, call_id=call_id, records=[],
+                             summary=err, input_hash=input_hash, error=err,
+                             extra={"cache_hit": True, **integrity})
+        else:
+            res = ToolResult(tool=tool, call_id=call_id, records=records,
+                             summary=summary, input_hash=input_hash,
+                             extra={"cache_hit": True, **integrity})
+            if finalize:
+                res = finalize(res)
+        ctx.audit.finish(call_id, start, tool, args, input_hash,
+                         binary=f"cache:{cache_family}", exit_code=0,
+                         output_summary=summary, tokens=res.response_tokens(),
+                         cache_hit=True, **integrity)
+        return res
 
     try:
         with tempfile.TemporaryDirectory(prefix="sift-csv-") as td:
@@ -274,19 +312,22 @@ def audited_csv_run(
             try:
                 result: RunResult = ctx.runner(argv)
             except Exception as exc:  # binary missing, disallowed, etc.
-                ctx.audit.finish(call_id, start, tool, args, input_hash, error=repr(exc))
-                return ToolResult(tool=tool, call_id=call_id, records=[], summary="",
-                                  input_hash=input_hash, error=repr(exc))
+                res = ToolResult(tool=tool, call_id=call_id, records=[], summary="",
+                                 input_hash=input_hash, error=repr(exc))
+                ctx.audit.finish(call_id, start, tool, args, input_hash,
+                                 tokens=res.response_tokens(), error=repr(exc))
+                return res
 
             csv_files = sorted(glob.glob(os.path.join(td, output_glob)))
             if not csv_files and result.exit_code != 0 and not result.stdout:
                 err = result.stderr.strip() or f"exit code {result.exit_code}"
                 integrity = _hash_check_extra(evidence_path, input_hash)
+                res = ToolResult(tool=tool, call_id=call_id, records=[], summary="",
+                                 input_hash=input_hash, error=err, extra=integrity)
                 ctx.audit.finish(call_id, start, tool, args, input_hash,
                                  binary=result.binary, exit_code=result.exit_code,
-                                 error=err, **integrity)
-                return ToolResult(tool=tool, call_id=call_id, records=[], summary="",
-                                  input_hash=input_hash, error=err, extra=integrity)
+                                 error=err, tokens=res.response_tokens(), **integrity)
+                return res
 
             full: list[dict[str, Any]] = []
             if csv_files:
@@ -296,9 +337,11 @@ def audited_csv_run(
             else:
                 full = parse(result.stdout)
     except Exception as exc:  # pragma: no cover - defensive
-        ctx.audit.finish(call_id, start, tool, args, input_hash, error=repr(exc))
-        return ToolResult(tool=tool, call_id=call_id, records=[], summary="",
-                          input_hash=input_hash, error=repr(exc))
+        res = ToolResult(tool=tool, call_id=call_id, records=[], summary="",
+                         input_hash=input_hash, error=repr(exc))
+        ctx.audit.finish(call_id, start, tool, args, input_hash,
+                         tokens=res.response_tokens(), error=repr(exc))
+        return res
 
     if cache_family:
         ctx.cache.put(cache_family, input_hash, full)
@@ -307,13 +350,18 @@ def audited_csv_run(
     integrity = _hash_check_extra(evidence_path, input_hash)
     if integrity.get("input_hash_intact") is False:
         err = "evidence hash changed during tool call"
+        res = ToolResult(tool=tool, call_id=call_id, records=[], summary=err,
+                         input_hash=input_hash, error=err, extra=integrity)
         ctx.audit.finish(call_id, start, tool, args, input_hash,
                          binary=result.binary, exit_code=result.exit_code,
-                         output_summary=summary, error=err, **integrity)
-        return ToolResult(tool=tool, call_id=call_id, records=[], summary=err,
-                          input_hash=input_hash, error=err, extra=integrity)
+                         output_summary=summary, error=err,
+                         tokens=res.response_tokens(), **integrity)
+        return res
+    res = ToolResult(tool=tool, call_id=call_id, records=records, summary=summary,
+                     input_hash=input_hash, extra=integrity)
+    if finalize:
+        res = finalize(res)
     ctx.audit.finish(call_id, start, tool, args, input_hash,
                      binary=result.binary, exit_code=result.exit_code,
-                     output_summary=summary, **integrity)
-    return ToolResult(tool=tool, call_id=call_id, records=records, summary=summary,
-                      input_hash=input_hash, extra=integrity)
+                     output_summary=summary, tokens=res.response_tokens(), **integrity)
+    return res

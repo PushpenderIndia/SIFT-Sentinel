@@ -39,8 +39,10 @@ def analyze_prefetch(ctx: ToolContext, prefetch_path: str) -> ToolResult:
 
     if not pf_files:
         msg = f"No .pf files found in {target} — Prefetch may be disabled (common on Windows Server/DC)."
-        ctx.audit.finish(call_id, start, TOOL, args, input_hash=None, error=msg)
-        return ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg, error=msg)
+        res = ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg, error=msg)
+        ctx.audit.finish(call_id, start, TOOL, args, input_hash=None,
+                         tokens=res.response_tokens(), error=msg)
+        return res
 
     all_records: list[dict] = []
     errors: list[str] = []
@@ -69,14 +71,17 @@ def analyze_prefetch(ctx: ToolContext, prefetch_path: str) -> ToolResult:
     }
     if changed:
         msg = "evidence hash changed during analyze_prefetch call"
+        res = ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg,
+                         error=msg, extra={**integrity, "changed_files": changed[:10]})
         ctx.audit.finish(call_id, start, TOOL, args, input_hash=None,
                          binary="sccainfo", exit_code=0, output_summary=summary,
-                         error=msg, changed_files=changed[:10], **integrity)
-        return ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg,
-                          error=msg, extra={**integrity, "changed_files": changed[:10]})
+                         error=msg, tokens=res.response_tokens(),
+                         changed_files=changed[:10], **integrity)
+        return res
 
+    res = ToolResult(tool=TOOL, call_id=call_id, records=all_records,
+                     summary=summary, extra=integrity)
     ctx.audit.finish(call_id, start, TOOL, args, input_hash=None,
                      binary="sccainfo", exit_code=0, output_summary=summary,
-                     **integrity)
-    return ToolResult(tool=TOOL, call_id=call_id, records=all_records,
-                      summary=summary, extra=integrity)
+                     tokens=res.response_tokens(), **integrity)
+    return res

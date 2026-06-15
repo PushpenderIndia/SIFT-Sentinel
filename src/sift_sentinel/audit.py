@@ -41,7 +41,12 @@ class AuditRecord:
     duration_ms: Optional[int] = None
     output_ref: Optional[str] = None   # path to stored raw output, if persisted
     output_summary: Optional[str] = None
-    tokens: Optional[int] = None       # token cost attributed to this call, if known
+    tokens: Optional[int] = None       # est. tokens of the response payload this
+                                       # call returned into the agent's context.
+                                       # The read-only server cannot observe the
+                                       # model's own prompt/completion usage; this
+                                       # is the token cost it imposes, estimated
+                                       # deterministically (see sift_sentinel.tokens).
     error: Optional[str] = None
     extra: dict[str, Any] = field(default_factory=dict)
 
