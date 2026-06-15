@@ -566,6 +566,7 @@ def summarize(records: list[dict[str, Any]], kind: str, limit: int = 20) -> str:
                           if r.get("label") and r.get("time") else None)
         label = (timeline_label or r.get("path") or r.get("name") or r.get("executable")
                  or yara_label or logon_label or r.get("foreign")
+                 or r.get("app")  # srum records use "app" not "name"
                  or (str(r.get("event_id")) if r.get("event_id") else None)
                  or str(r))
         lines.append("  - " + label)
