@@ -14,6 +14,14 @@ Architecture: Custom MCP Server (the trust boundary) plus Claude Code as the
 reasoning agent. Eighteen read-only forensic tools, structured parsers, artifact
 caching, and a test suite that runs with no real SIFT tools and no API key.
 
+## Demo
+
+A screencast of a live triage run — terminal execution with narration, including
+a self-correction sequence — is in the repo at
+[`docs/demo_video.mp4`](docs/demo_video.mp4).
+
+https://github.com/PushpenderIndia/SIFT-Sentinel/raw/main/docs/demo_video.mp4
+
 ## Inspiration
 
 An AI-driven adversary can go from initial access to domain control in under
@@ -259,6 +267,30 @@ digesting large results removed whole categories of hallucination before any
 prompt work, and made the claim that the destructive tool simply does not exist
 one we can actually stand behind.
 
+## Dataset
+
+SIFT-Sentinel was developed and tested against the **SANS Find Evil!
+"SRL-2018 Compromised Enterprise Network"** dataset (provided by SANS for the
+hackathon). Specifically:
+
+- **Disk:** `base-dc-cdrive.E01` — the C: drive of `base-dc.shieldbase.lan`, a
+  Windows Server 2016 domain controller, mounted read-only at `/mnt/cases`.
+- **Memory:** `SRL-2018/base-dc-memory.7z` — the RAM capture of the same host,
+  extracted to `/evidence/base-dc-memory.img`.
+
+**What the agent found** on this evidence (full report with `call_id` citations
+in [`audit/triage-report-base-dc-2026-06-14.md`](audit/triage-report-base-dc-2026-06-14.md)):
+
+- **CONFIRMED** — F-Response remote-forensics agent (`subject_srv.exe`) and the
+  `mnemosyne` kernel driver (`Mnemosyne.sys`) staged in `C:\Windows` on
+  2018-09-06/07, each corroborated by MFT plus a 7045 service-install event, and
+  attributed to IR/acquisition tooling rather than an adversary.
+- **INFERRED** — a sustained series of 163 failed logons (event 4625) from
+  `BASE-HUNT$` at `172.16.5.25` against the DC over ~27 hours.
+- **CONTRADICTION** — memory tooling returned zero processes with no error,
+  flagged as a silent tooling failure (a blind spot), not evidence of a clean
+  host.
+
 ## Try it out
 
 Requires the SANS SIFT Workstation (Ubuntu-based, IR tools pre-installed).
@@ -317,11 +349,11 @@ pytest            # no forensic tools or API key required
 | # | Deliverable | Where |
 |---|---|---|
 | 1 | Code repository (public, MIT) | this repo |
-| 2 | Demo video including a self-correction sequence | Devpost submission |
+| 2 | Demo video including a self-correction sequence | [`docs/demo_video.mp4`](docs/demo_video.mp4) (also on the Devpost submission) |
 | 3 | Architecture diagram and trust boundaries | this README, Architecture section |
 | 4 | Written project description | this README |
-| 5 | Dataset documentation | `/mnt/Findevil` base-dc image and memory; findings in report |
-| 6 | Accuracy report including spoliation | `benchmark/score.py` and the hash-invariance check |
+| 5 | Dataset documentation | SANS Find Evil! "SRL-2018 Compromised Enterprise Network" (`base-dc-cdrive.E01` + `SRL-2018/base-dc-memory.7z`); see Dataset section and `audit/triage-report-base-dc-2026-06-14.md` |
+| 6 | Accuracy report including spoliation | `src/sift_sentinel/benchmark/score.py` and the hash-invariance check |
 | 7 | Try-it-out instructions | this README and `install.sh` |
 | 8 | Agent execution logs | `audit/execution-log.jsonl`, one record per call |
 
