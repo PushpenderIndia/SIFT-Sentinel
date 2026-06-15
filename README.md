@@ -145,6 +145,10 @@ Operations:
 
 ## 18 Tools exposed to Claude Code
 
+The table below is the overview; per-tool signatures, parameters, return shape,
+and the guarantees shared by every call are in
+[`docs/tools.md`](docs/tools.md).
+
 | Tool | Underlying binary | Forensic question |
 |---|---|---|
 | `extract_mft_timeline` | MFTECmd | When were files created or modified? |
@@ -176,6 +180,10 @@ controls even though they do not spawn an external binary.
 ## Architecture
 
 ![](docs/architecture.png)
+
+A full written walkthrough — components, data flow of a single tool call, the
+trust boundary, and the two guardrail layers — is in
+[`docs/architecture.md`](docs/architecture.md).
 
 There are two separate guardrail layers, and we keep them distinct:
 
@@ -278,6 +286,9 @@ one we can actually stand behind.
 
 ## Dataset
 
+Full evidence dataset documentation — source, artifacts read, and findings — is
+in [`docs/dataset.md`](docs/dataset.md).
+
 SIFT-Sentinel was developed and tested against the **SANS Find Evil!
 "SRL-2018 Compromised Enterprise Network"** dataset (provided by SANS for the
 hackathon). Specifically:
@@ -301,6 +312,9 @@ in [`audit/triage-report-base-dc-2026-06-14.md`](audit/triage-report-base-dc-202
   host.
 
 ## Try it out
+
+Full step-by-step installation, mounting, and troubleshooting is in
+[`docs/installation.md`](docs/installation.md).
 
 Requires the SANS SIFT Workstation (Ubuntu-based, IR tools pre-installed).
 
