@@ -158,38 +158,7 @@ controls even though they do not spawn an external binary.
 
 ## Architecture
 
-```
-+-------------------------------------------------------------+
-|                     CLAUDE CODE  (agent)                    |
-|  Analyst instructions from CLAUDE.md                        |
-|  Sequences tools, self-corrects, cites every finding        |
-+----------------------------+--------------------------------+
-                            |  MCP (stdio / JSON-RPC)
-                            v
-+-------------------------------------------------------------+
-|         SIFT-SENTINEL MCP SERVER   (trust boundary)         |
-|  Typed, read-only functions only. No shell.                 |
-|  - path-traversal guard (evidence root only)                |
-|  - SHA-256 hash before/after file-backed evidence calls     |
-|  - allowlist-only subprocess runner (no shell=True)         |
-|  - parses raw output to compact JSON                        |
-|  - caches parsed artifacts by evidence SHA-256              |
-|  - digests very large results instead of dumping them       |
-|  - appends one record per call to execution-log.jsonl       |
-+----------------------------+--------------------------------+
-                            |  read-only subprocess
-                            v
-+-------------------------------------------------------------+
-|   SIFT WORKSTATION TOOLS                                     |
-|   MFTECmd, AmcacheParser, libscca, EvtxECmd,                 |
-|   AppCompatCacheParser, SrumECmd, RegRipper,                 |
-|   YARA, Volatility 3                                         |
-+----------------------------+--------------------------------+
-                            v
-                   EVIDENCE (mounted read-only)
-                   /mnt/cases  - NTFS disk image
-                   /evidence   - RAM capture
-```
+![](docs/architecture.png)
 
 There are two separate guardrail layers, and we keep them distinct:
 
@@ -353,49 +322,6 @@ pytest            # no forensic tools or API key required
 | 6 | Accuracy report including spoliation | `benchmark/score.py` and the hash-invariance check |
 | 7 | Try-it-out instructions | this README and `install.sh` |
 | 8 | Agent execution logs | `audit/execution-log.jsonl`, one record per call |
-
-## Project layout
-
-```
-src/sift_sentinel/
-  mcp_server.py          MCP server, the trust boundary
-  runner.py              allowlist-only subprocess chokepoint (no shell=True)
-  evidence.py            read-only handling, SHA-256 check, path-traversal guard
-  audit.py               append-only JSONL audit log (one record per tool call)
-  cache.py               SHA-256-keyed parsed-artifact cache
-  concurrency.py         concurrent broad-sweep helper for independent tools
-  correlate.py           super-timeline normalization and merge logic
-  confidence.py          CONFIRMED / INFERRED / UNCERTAIN / CONTRADICTION model
-  parsers.py             raw tool output to compact JSON, plus the MFT digest
-  reputation.py          known-good hash annotation for execution artifacts
-  report.py              offline findings report (not an MCP tool, by design)
-  tools/
-    base.py              shared plumbing: audited run, byte budget, result type
-    amcache.py           get_amcache, known-good suppression, cache reuse
-    mft_timeline.py      extract_mft_timeline (with digest mode)
-    prefetch.py          analyze_prefetch
-    event_logs.py        parse_event_logs, actor-field extraction
-    logon_summary.py     aggregate 4624/4625 logons by actor tuple
-    powershell_logs.py   PowerShell 4103/4104 command logs
-    shimcache.py         AppCompatCache / ShimCache
-    srum.py              SRUM application resource usage
-    read_artifact.py     audited read-only text artifact reader
-    super_timeline.py    correlated chronological view across artifacts
-    registry_autoruns.py registry_autoruns
-    yara_scan.py         yara_scan
-    memory.py            pslist / pstree / cmdline / netscan / malfind / svcscan
-    registry.py          callable tool map for tests and non-MCP orchestration
-  benchmark/score.py     accuracy vs. ground truth and vs. the Protocol SIFT baseline
-CLAUDE.md                analyst instructions Claude Code follows during triage
-tests/                   tests and fixtures for parsers, tools, reports, cache, correlation
-```
-
-## What's next
-
-- Add more curated digests for high-volume EVTX and SRUM sources.
-- Expand known-good reputation data beyond the built-in hash list.
-- Publish accuracy and hallucination-rate numbers against the Protocol SIFT
-  baseline.
 
 ## License
 
