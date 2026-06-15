@@ -387,6 +387,33 @@ source .venv/bin/activate
 pytest            # no forensic tools or API key required
 ```
 
+## Three-claim trace (for judges)
+
+The Official Rules guarantee that any finding in the agent's report traces back
+to the specific tool execution that produced it. Below are three representative
+claims from the primary scored run (DFIR Madness Case 001), each resolved to its
+audit log entry in
+[`audit/execution-log-szechuan.jsonl`](audit/execution-log-szechuan.jsonl).
+
+| Claim (from triage report) | call\_id | Tool | Log entry key fields |
+|---|---|---|---|
+| "`coreupdater.exe` (PID 3644) confirmed running at memory-capture time" | `call-000005` | `mem_pslist` | `"binary":"vol"`, `"tool":"mem_pslist"`, output\_summary lists `coreupdater.exe` |
+| "C2 `ESTABLISHED` TCP to `203.78.103.109:443` from PID 3644" | `call-000006` | `mem_netscan` | `"binary":"vol"`, `"tool":"mem_netscan"`, output\_summary first bullet: `203.78.103.109:443` |
+| "312 failed + 1 successful logon, `Administrator@194.61.24.102`, type=10 (RemoteInteractive)" | `call-000012` | `logon_summary` | `"binary":"cache:evtx"`, `"tool":"logon_summary"`, output\_summary first bullet: `Administrator@194.61.24.102 type=10 ok=1 fail=312` |
+
+To verify: `grep "call-000005\|call-000006\|call-000012" audit/execution-log-szechuan.jsonl | python3 -m json.tool`
+
+The full chain-of-custody check (all cited `call_id`s vs. logged records) can
+also be run offline:
+```bash
+python -m sift_sentinel.report \
+  --audit audit/execution-log-szechuan.jsonl \
+  -f audit/triage-report-citadel-dc01-2026-06-15.md \
+  --case "DFIR Madness Case 001" \
+  -o /tmp/szechuan-report.pdf
+# Output: "PASS: all N cited call_id(s) resolve to a logged tool invocation"
+```
+
 ## Required deliverables
 
 | # | Deliverable | Where |
@@ -396,7 +423,7 @@ pytest            # no forensic tools or API key required
 | 3 | Architecture diagram and trust boundaries | this README, Architecture section |
 | 4 | Written project description | this README |
 | 5 | Dataset documentation | Run against **two SANS Find Evil! "SRL-2018" hosts** — `base-dc` (`base-dc-cdrive.E01` + `base-dc-memory.7z`) and `base-file` (`base-file-cdrive.E01` + `base-file-memory.7z`) — **plus DFIR Madness Case 001 "Stolen Szechuan Sauce"** (`CITADEL-DC01` + `DESKTOP-SDN1RPT`); see [`docs/dataset.md`](docs/dataset.md) |
-| 6 | Accuracy report including spoliation | `src/sift_sentinel/benchmark/score.py` + hash-invariance check; scored run in [`docs/accuracy_report.md`](docs/accuracy_report.md) (Szechuan Sauce — 0.818 F1, 0% hallucination) |
+| 6 | Accuracy report including spoliation | `src/sift_sentinel/benchmark/score.py` + hash-invariance check; primary scored run (DFIR Madness Case 001 Szechuan Sauce) in [`docs/accuracy_report_szechuan.md`](docs/accuracy_report_szechuan.md) (F1=0.818, 0% hallucination rate); SANS SRL-2018 base-dc run in [`docs/accuracy_report.md`](docs/accuracy_report.md) |
 | 7 | Try-it-out instructions | this README and `install.sh` |
 | 8 | Agent execution logs | one record per call — `audit/execution-log-base-dc.jsonl`, `audit/execution-log-base-file.jsonl` (SANS SRL-2018) and `audit/execution-log-szechuan.jsonl` (Szechuan Sauce) |
 

@@ -6,25 +6,28 @@ for the findings below — only the real SANS-provided case images.
 
 ## Dataset
 
-SIFT-Sentinel was developed and tested against the **SANS Find Evil!
-"SRL-2018 Compromised Enterprise Network"** dataset — the case data provided by
-SANS for the hackathon.
-
-The agent has now been run end-to-end against **two host images from this
-dataset** — the domain controller (`base-dc`) and the file server (`base-file`).
-Each run is fully self-contained, with its own audit log and triage report. The
-`base-file` run is the **most recently added** report set.
+SIFT-Sentinel has been run end-to-end against **three host images across two
+independent cases**: two hosts from the **SANS Find Evil! "SRL-2018 Compromised
+Enterprise Network"** dataset (provided by SANS for the hackathon), and two hosts
+from **DFIR Madness Case 001 "The Stolen Szechuan Sauce"** (public case). Each
+run is fully self-contained with its own audit log, triage report, and accuracy
+score. The Szechuan Sauce run is the **primary scored evaluation** (F1=0.818,
+0% hallucination rate).
 
 ### Evaluation runs at a glance
 
-| # | Host | Disk image | Memory image | Audit log | Triage report |
-|---|---|---|---|---|---|
-| 1 | `base-dc.shieldbase.lan` (Win Server 2016 **domain controller**) | `base-dc-cdrive.E01` | `base-dc-memory.7z` → `.img` | [`execution-log-base-dc.jsonl`](../audit/execution-log-base-dc.jsonl) | [`triage-report-base-dc-2026-06-14.md`](../audit/triage-report-base-dc-2026-06-14.md) |
-| 2 | `base-file.shieldbase.lan` (Win Server **file server**) | `base-file-cdrive.E01` | `base-file-memory.7z` → `.img` | [`execution-log-base-file.jsonl`](../audit/execution-log-base-file.jsonl) | [`triage-report-base-file.md`](../audit/triage-report-base-file.md) |
+| # | Case | Host | OS | Disk image | Memory image | Audit log | Triage report |
+|---|---|---|---|---|---|---|---|
+| 1 | SANS SRL-2018 | `base-dc.shieldbase.lan` — **domain controller** | Win Server 2016 | `base-dc-cdrive.E01` | `base-dc-memory.7z` → `.img` | [`execution-log-base-dc.jsonl`](../audit/execution-log-base-dc.jsonl) | [`triage-report-base-dc-2026-06-14.md`](../audit/triage-report-base-dc-2026-06-14.md) |
+| 2 | SANS SRL-2018 | `base-file.shieldbase.lan` — **file server** | Win Server 2016 | `base-file-cdrive.E01` | `base-file-memory.7z` → `.img` | [`execution-log-base-file.jsonl`](../audit/execution-log-base-file.jsonl) | [`triage-report-base-file.md`](../audit/triage-report-base-file.md) |
+| 3 | DFIR Madness Case 001 | `CITADEL-DC01` — **domain controller** | Win Server 2012 R2 | `CITADEL-DC01-C.E01` | `citadel-dc01-memory.img` | [`execution-log-szechuan.jsonl`](../audit/execution-log-szechuan.jsonl) | [`triage-report-citadel-dc01-2026-06-15.md`](../audit/triage-report-citadel-dc01-2026-06-15.md) |
+| 4 | DFIR Madness Case 001 | `DESKTOP-SDN1RPT` — **victim desktop** | Win 10 Enterprise | `DESKTOP-SDN1RPT-C.E01` | `desktop-sdn1rpt-memory.img` | (included in run 3 log above — calls 000026–000031) | (included in run 3 report above — Desktop Pivot section) |
 
-Both hosts belong to the same `shieldbase.lan` domain, so the two runs corroborate
-each other (e.g. the same `BASE-HUNT` source `172.16.5.25` and the same F-Response /
-`Mnemosyne.sys` IR tooling appear in both).
+Runs 1 and 2 belong to the same `shieldbase.lan` domain, so they corroborate
+each other (the same `BASE-HUNT` source `172.16.5.25` and F-Response /
+`Mnemosyne.sys` IR tooling appear in both). Runs 3 and 4 cover the same intrusion
+from two victim perspectives — DC (initial compromise, malware deployment) and
+Desktop (lateral movement, data exfiltration).
 
 ### Artifacts per run
 
@@ -34,12 +37,17 @@ each other (e.g. the same `BASE-HUNT` source `172.16.5.25` and the same F-Respon
 | `base-dc` | Memory | `SRL-2018/base-dc-memory.7z` → `base-dc-memory.img` | `/evidence/base-dc-memory.img` |
 | `base-file` | Disk | `base-file-cdrive.E01` | `/mnt/file-case` (E01 → raw via `ewfmount` → NTFS, `ro,noexec,nodev`) |
 | `base-file` | Memory | `SRL-2018/base-file-memory.7z` → `base-file-memory.img` | `/evidence/base-file-memory.img` |
+| `CITADEL-DC01` | Disk | `CITADEL-DC01-C.E01` | `/mnt/cases` (E01 → raw via `ewfmount` → NTFS, `ro,noexec,nodev`) |
+| `CITADEL-DC01` | Memory | `citadel-dc01-memory.img` | `/evidence/citadel-dc01-memory.img` |
+| `DESKTOP-SDN1RPT` | Disk | `DESKTOP-SDN1RPT-C.E01` | `/mnt/cases-desktop` (E01 → raw via `ewfmount` → NTFS, `ro,noexec,nodev`) |
+| `DESKTOP-SDN1RPT` | Memory | `desktop-sdn1rpt-memory.img` | `/evidence/desktop-sdn1rpt-memory.img` |
 
-- **Acquisition note:** the images were captured by an IR responder, which is
-  directly relevant to attribution (see findings).
-- **How to obtain:** the SRL-2018 evidence is distributed by SANS to Find Evil!
-  participants. It is **not redistributed in this repository** — point the agent
-  at your own copy after mounting it read-only.
+- **Acquisition note (SRL-2018):** the base-dc and base-file images were captured by an IR
+  responder, which is directly relevant to attribution (see findings).
+- **Acquisition note (Szechuan Sauce):** DFIR Madness Case 001 is a public training case;
+  images are available at https://dfirmadness.com/the-stolen-szechuan-sauce/
+- **How to obtain (SRL-2018):** distributed by SANS to Find Evil! participants; not
+  redistributed here — point the agent at your own copy after mounting read-only.
 
 ---
 
@@ -140,6 +148,70 @@ Demo recording of this run:
 
 ---
 
+## What the agent found — Run 3 (`CITADEL-DC01` + `DESKTOP-SDN1RPT`, DFIR Madness Case 001)
+
+Full triage report with `call_id` citations:
+[`../audit/triage-report-citadel-dc01-2026-06-15.md`](../audit/triage-report-citadel-dc01-2026-06-15.md).
+Raw tool execution log (31 calls, both hosts):
+[`../audit/execution-log-szechuan.jsonl`](../audit/execution-log-szechuan.jsonl).
+Accuracy report scored against the 29 public answer-key checks:
+[`accuracy_report_szechuan.md`](accuracy_report_szechuan.md) — F1=0.818, 0% hallucination rate.
+
+### CONFIRMED (≥2 independent sources agree)
+
+- **`coreupdater.exe` (Meterpreter) deployed to `C:\Windows\System32\` and running
+  as a service.** MFT records file creation at 2020-09-19 02:24:12 UTC
+  (`call-000017`), Amcache records execution (`call-000001`), ShimCache records
+  presence (`call-000004`), `mem_pslist` shows PID 3644 running at capture time
+  (`call-000005`), and System.evtx records a 7045 service-install event at
+  02:27:49 UTC with `ImagePath=C:\Windows\System32\coreupdater.exe` and start
+  type `autostart` (`call-000013`). Five independent sources.
+
+- **C2 channel to `203.78.103.109:443` (Thailand, Netway Communications).**
+  `mem_netscan` shows an `ESTABLISHED` TCP socket from PID 3644 (`coreupdater.exe`)
+  to `203.78.103.109:443` at capture time (`call-000006`). SRUM records
+  `coreupdater.exe` transferring 2,847,291 bytes sent on the Desktop
+  (`call-000031`). Memory + SRUM = two independent sources.
+
+- **RDP brute-force from `194.61.24.102` leading to successful Administrator
+  logon.** `logon_summary` (`call-000012`) shows 312 failures followed by 1
+  success for `Administrator@194.61.24.102` type=10 (RemoteInteractive). Security
+  EVTX 4624/4625 (`call-000010`, `call-000011`) corroborate timestamps. Three
+  sources.
+
+- **Lateral RDP movement from DC to `DESKTOP-SDN1RPT` (`10.42.85.115`) at
+  02:35:54 UTC.** Security.evtx on Desktop records type-10 logon from
+  `10.42.85.10` (DC) (`call-000030`); Prefetch on Desktop records `MSTSC.EXE`
+  execution (`call-000027`). Two sources.
+
+### INFERRED (single source, explicitly flagged)
+
+- **`spoolsv.exe` process injection (Meterpreter migration).** `mem_malfind`
+  returns three RWX unbacked memory regions in `spoolsv.exe` (`call-000007`).
+  Single memory source → INFERRED; would require additional YARA/string scan to
+  confirm Meterpreter shellcode.
+
+- **Backdoor account `birdman` created.** EID 4720 in Security.evtx (`call-000019`).
+  Single source → INFERRED; would confirm with SAM hive or `mem_svcscan` showing
+  logon token.
+
+- **`ricksanchez` added to Domain Admins then removed (privilege escalation and
+  cover-up).** EID 4756/4732 (`call-000020`). Single source → INFERRED.
+
+- **PowerShell base64+gzip stager used to download and stage the payload.**
+  EID 4104 script-block log (`call-000016`) records the encoded command. Single
+  source → INFERRED (stager text not decoded in-tool; decoding would confirm
+  download URL).
+
+### CONTRADICTION (surfaced, not hidden)
+
+- **[X-1] DC timezone vs. Desktop timezone offset.** All timestamps normalized to
+  UTC by EvtxECmd/MFTECmd; registry TZI keys indicate UTC-6 (DC, MST) and UTC-8
+  (Desktop, PST). Correlations against any log source using local time must apply
+  the appropriate offset. Flagged as a known ambiguity — not resolved silently.
+
+---
+
 ## Reproducibility
 
 Each run is reproduced independently. Mount the relevant artifacts read-only
@@ -150,11 +222,10 @@ Code so the `sift-sentinel` MCP server and its 18 tools appear, then:
 |---|---|
 | `base-dc` | `/triage` against `/mnt/cases` with memory at `/evidence/base-dc-memory.img` |
 | `base-file` | `/triage` against `/mnt/file-case` with memory at `/evidence/base-file-memory.img` |
+| `CITADEL-DC01` + `DESKTOP-SDN1RPT` | `/triage` against `/mnt/cases` (DC) and `/mnt/cases-desktop` (Desktop) with memory at `/evidence/citadel-dc01-memory.img` and `/evidence/desktop-sdn1rpt-memory.img` |
 
-Every finding traces back to the `call_id`s recorded in that run's audit log
-(`audit/execution-log-base-dc.jsonl` for `base-dc`,
-`audit/execution-log-base-file.jsonl` for `base-file`), so a judge can locate the
-exact tool execution behind any claim above.
+Every finding traces back to the `call_id`s recorded in that run's audit log, so
+a judge can locate the exact tool execution behind any claim above.
 
 ---
 
@@ -163,5 +234,6 @@ exact tool execution behind any claim above.
 - [`../README.md`](../README.md) — setup, the 18 tools, and try-it-out steps
 - [`architecture.md`](architecture.md) — how the read-only pipeline is enforced
 - [`tools.md`](tools.md) — per-tool reference
-- [`../audit/triage-report-base-dc-2026-06-14.md`](../audit/triage-report-base-dc-2026-06-14.md)
-  — the full findings report
+- [`accuracy_report_szechuan.md`](accuracy_report_szechuan.md) — scored evaluation against DFIR Madness Case 001 answer key
+- [`../audit/triage-report-citadel-dc01-2026-06-15.md`](../audit/triage-report-citadel-dc01-2026-06-15.md) — Szechuan Sauce full findings report
+- [`../audit/triage-report-base-dc-2026-06-14.md`](../audit/triage-report-base-dc-2026-06-14.md) — SRL-2018 base-dc full findings report
