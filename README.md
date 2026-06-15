@@ -21,7 +21,7 @@ a self-correction sequence.
 
 [![IMAGE_ALT](https://img.youtube.com/vi/G-Joj5jwE7Y/0.jpg)](https://youtu.be/G-Joj5jwE7Y)
 
-▶️ **Watch on YouTube:** https://youtu.be/G-Joj5jwE7Y
+YouTube Link: https://youtu.be/G-Joj5jwE7Y
 Raw video file in this repo: [`docs/demo_video.mp4`](docs/demo_video.mp4)
 
 ## Inspiration
