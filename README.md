@@ -17,10 +17,9 @@ caching, and a test suite that runs with no real SIFT tools and no API key.
 ## Demo
 
 A screencast of a live triage run — terminal execution with narration, including
-a self-correction sequence — is in the repo at
-[`docs/demo_video.mp4`](docs/demo_video.mp4).
+a self-correction sequence.
 
-https://github.com/PushpenderIndia/SIFT-Sentinel/raw/main/docs/demo_video.mp4
+[Watch the demo](docs/demo_video.mp4) (`docs/demo_video.mp4`)
 
 ## Inspiration
 
