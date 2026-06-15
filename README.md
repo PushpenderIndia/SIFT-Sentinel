@@ -19,7 +19,10 @@ caching, and a test suite that runs with no real SIFT tools and no API key.
 A screencast of a live triage run — terminal execution with narration, including
 a self-correction sequence.
 
-![Watch the demo](docs/demo_video.mp4) (`docs/demo_video.mp4`)
+[![Watch the demo](https://img.youtube.com/vi/G-Joj5jwE7Y/maxresdefault.jpg)](https://youtu.be/G-Joj5jwE7Y)
+
+▶️ **Watch on YouTube:** https://youtu.be/G-Joj5jwE7Y
+Raw video file in this repo: [`docs/demo_video.mp4`](docs/demo_video.mp4)
 
 ## Inspiration
 
@@ -348,7 +351,7 @@ pytest            # no forensic tools or API key required
 | # | Deliverable | Where |
 |---|---|---|
 | 1 | Code repository (public, MIT) | this repo |
-| 2 | Demo video including a self-correction sequence | [`docs/demo_video.mp4`](docs/demo_video.mp4) (also on the Devpost submission) |
+| 2 | Demo video including a self-correction sequence | [YouTube](https://youtu.be/G-Joj5jwE7Y) · raw file [`docs/demo_video.mp4`](docs/demo_video.mp4) (also on the Devpost submission) |
 | 3 | Architecture diagram and trust boundaries | this README, Architecture section |
 | 4 | Written project description | this README |
 | 5 | Dataset documentation | SANS Find Evil! "SRL-2018 Compromised Enterprise Network" (`base-dc-cdrive.E01` + `SRL-2018/base-dc-memory.7z`); see Dataset section and `audit/triage-report-base-dc-2026-06-14.md` |
