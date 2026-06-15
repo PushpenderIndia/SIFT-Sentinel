@@ -17,7 +17,6 @@ venv/
 htmlcov/
 
 # Runtime artifacts — NEVER commit evidence or logs containing case data
-audit/*.jsonl
 runs/
 mnt/
 *.E01
