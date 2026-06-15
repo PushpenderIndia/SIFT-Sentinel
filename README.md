@@ -291,15 +291,21 @@ in [`docs/dataset.md`](docs/dataset.md).
 
 SIFT-Sentinel was developed and tested against the **SANS Find Evil!
 "SRL-2018 Compromised Enterprise Network"** dataset (provided by SANS for the
-hackathon). Specifically:
+hackathon). It has been run end-to-end against **two host images from this
+dataset** — each a self-contained run with its own audit log, triage report, and
+demo:
 
-- **Disk:** `base-dc-cdrive.E01` — the C: drive of `base-dc.shieldbase.lan`, a
-  Windows Server 2016 domain controller, mounted read-only at `/mnt/cases`.
-- **Memory:** `SRL-2018/base-dc-memory.7z` — the RAM capture of the same host,
-  extracted to `/evidence/base-dc-memory.img`.
+| Run | Host | Disk + memory | Triage report | Audit log |
+|---|---|---|---|---|
+| **`base-dc`** | `base-dc.shieldbase.lan` — Windows Server 2016 **domain controller** | `base-dc-cdrive.E01` + `base-dc-memory.7z` → `/mnt/cases`, `/evidence/base-dc-memory.img` | [`triage-report-base-dc-2026-06-14.md`](audit/triage-report-base-dc-2026-06-14.md) | [`execution-log-base-dc.jsonl`](audit/execution-log-base-dc.jsonl) |
+| **`base-file`** | `base-file.shieldbase.lan` — Windows Server **file server** | `base-file-cdrive.E01` + `base-file-memory.7z` → `/mnt/file-case`, `/evidence/base-file-memory.img` | [`triage-report-base-file.md`](audit/triage-report-base-file.md) | [`execution-log-base-file.jsonl`](audit/execution-log-base-file.jsonl) |
 
-**What the agent found** on this evidence (full report with `call_id` citations
-in [`audit/triage-report-base-dc-2026-06-14.md`](audit/triage-report-base-dc-2026-06-14.md)):
+Both hosts belong to the same `shieldbase.lan` domain, so the runs corroborate
+each other (the same `BASE-HUNT` source and the same F-Response / `Mnemosyne.sys`
+IR tooling appear in both).
+
+**What the agent found — `base-dc`** (full report:
+[`audit/triage-report-base-dc-2026-06-14.md`](audit/triage-report-base-dc-2026-06-14.md)):
 
 - **CONFIRMED** — F-Response remote-forensics agent (`subject_srv.exe`) and the
   `mnemosyne` kernel driver (`Mnemosyne.sys`) staged in `C:\Windows` on
@@ -310,6 +316,20 @@ in [`audit/triage-report-base-dc-2026-06-14.md`](audit/triage-report-base-dc-202
 - **CONTRADICTION** — memory tooling returned zero processes with no error,
   flagged as a silent tooling failure (a blind spot), not evidence of a clean
   host.
+
+**What the agent found — `base-file`** (full report:
+[`audit/triage-report-base-file.md`](audit/triage-report-base-file.md); demo:
+[`docs/sans-2018-base-file-demo.mp4`](docs/sans-2018-base-file-demo.mp4)):
+
+- **CONFIRMED** — fake "Microsoft Advanced API 32/64" services backed by
+  `msadvapi2_*.exe` (staged via `install_wormhole`) and a WinPcap `npf.sys`
+  driver, corroborated by MFT plus 7045 service-install events, with rogue CA
+  certs dropped alongside; the same F-Response / `Mnemosyne.sys` IR tooling seen
+  on `base-dc`.
+- **INFERRED** — an `rsydow-a` 2-minute beacon loop (160+ Type 3 logons from
+  `172.16.4.4`) plus off-subnet `cbarton` logons from `10.10.x.x`.
+- **CONTRADICTION** — memory tooling again returned zero records on a valid,
+  hashed image (same Volatility profile mismatch), flagged as a blind spot.
 
 ## Try it out
 
