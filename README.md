@@ -136,7 +136,7 @@ Operations:
 - Tests run with no real SIFT tools and no API key, using captured fixtures and
   an injected fake runner.
 
-## Tools exposed to Claude Code
+## 18 Tools exposed to Claude Code
 
 | Tool | Underlying binary | Forensic question |
 |---|---|---|
