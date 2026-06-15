@@ -57,8 +57,9 @@ Evidence safety:
   inside an allowed evidence root before use. Multiple roots are supported (for
   example a disk root plus a separately mounted RAM capture) without widening to
   the whole filesystem.
-- SHA-256 of every evidence file is recorded before and after each tool call, so
-  an unchanged hash across a run is a verifiable spoliation proof.
+- SHA-256 of each file-backed evidence artifact is recorded before and after
+  tool calls. A changed post-call hash is returned as an integrity error and
+  logged in the audit record.
 
 Accuracy and output handling:
 
@@ -148,11 +149,12 @@ Operations:
 | `mem_svcscan` | Volatility 3 | Services resident in memory and their binaries |
 | `super_timeline` | Internal correlation | Time-ordered view across disk, execution, and event artifacts |
 
-Adding a tool is a small change to the trust boundary: one entry in
-`tools/registry.py` and one allowlist entry in `runner.ALLOWED_BINARIES`. That
-registry is the agent's entire action space. Internal tools such as
-`read_artifact` and `super_timeline` still pass through the same path, hash, and
-audit controls even though they do not spawn an external binary.
+Adding a tool is a small change to the trust boundary: implement the wrapper,
+register the typed MCP function in `mcp_server.py`, add it to
+`tools/registry.py` for non-MCP callers/tests, and add an allowlist entry in
+`runner.ALLOWED_BINARIES` if it spawns an external binary. Internal tools such as
+`read_artifact` and `super_timeline` still pass through path, hash, and audit
+controls even though they do not spawn an external binary.
 
 ## Architecture
 
@@ -168,7 +170,7 @@ audit controls even though they do not spawn an external binary.
 |         SIFT-SENTINEL MCP SERVER   (trust boundary)         |
 |  Typed, read-only functions only. No shell.                 |
 |  - path-traversal guard (evidence root only)                |
-|  - SHA-256 hash before/after every call                     |
+|  - SHA-256 hash before/after file-backed evidence calls     |
 |  - allowlist-only subprocess runner (no shell=True)         |
 |  - parses raw output to compact JSON                        |
 |  - caches parsed artifacts by evidence SHA-256              |
@@ -257,8 +259,9 @@ Windows runtime, which keeps the try-it-out path simple.
 
 Read-only mounts plus hashing for spoliation proof. Images are mounted
 `ro,noexec,nodev` and every evidence file is hashed before and after a run.
-Identical hashes across the whole investigation are the evidence that nothing was
-modified, which is what the accuracy report needs to demonstrate.
+Identical hashes across file-backed tool calls and whole-investigation
+`EvidenceSet` checks are the evidence that nothing was modified, which is what
+the accuracy report needs to demonstrate.
 
 ## Handling very large outputs
 
@@ -300,7 +303,7 @@ cd SIFT-Sentinel
 `install.sh` creates a virtualenv (on local disk if it detects a vboxsf shared
 folder), installs the package and dev dependencies, installs `yara` via apt if
 missing, and registers the `sift-sentinel` MCP server in
-`~/.claude/settings.json`. Pass a custom root with
+Claude Code's MCP configuration. Pass a custom root with
 `./install.sh --evidence-root /mnt/cases`.
 
 ### 2. Mount evidence read-only before restarting Claude Code
@@ -381,7 +384,7 @@ src/sift_sentinel/
     registry_autoruns.py registry_autoruns
     yara_scan.py         yara_scan
     memory.py            pslist / pstree / cmdline / netscan / malfind / svcscan
-    registry.py          the action space, single source of truth
+    registry.py          callable tool map for tests and non-MCP orchestration
   benchmark/score.py     accuracy vs. ground truth and vs. the Protocol SIFT baseline
 CLAUDE.md                analyst instructions Claude Code follows during triage
 tests/                   tests and fixtures for parsers, tools, reports, cache, correlation

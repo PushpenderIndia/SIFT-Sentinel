@@ -17,7 +17,7 @@ and cannot modify evidence.
 | `parse_event_logs` | Logons (4624/4625), service installs (7045), etc. — now with account/IP/logon-type/service fields |
 | `logon_summary` | 4624/4625 aggregated by account + source IP + logon type (brute-force/spray at a glance) |
 | `powershell_logs` | PowerShell script-block/module logging (4104/4103) with command text |
-| `parse_registry`/`registry_autoruns` | Persistence/autostart (Run keys, services, BAM) via RegRipper |
+| `registry_autoruns` | Persistence/autostart (Run keys, services, BAM) via RegRipper |
 | `read_artifact` | Read a text artifact (e.g. a PowerShell transcript), path-guarded + hashed + audited |
 | `mem_pslist` / `mem_pstree` | Processes at capture time, flat or with parent/child linkage (Volatility 3) |
 | `mem_cmdline` | Per-process command lines (Volatility 3) |
@@ -32,7 +32,8 @@ SHA-256, so re-running a triage or querying the same `$MFT`/`.evtx` again is fas
 
 Evidence root: `/mnt/cases` (mounted read-only)
 Memory image: `/evidence/base-dc-memory.img`
-Audit log: `~/Desktop/SIFT-Sentinel/audit/execution-log.jsonl`
+Audit log: `audit/execution-log.jsonl` by default, or the path passed with
+`--audit` during MCP registration.
 
 ## How to work
 
@@ -64,8 +65,9 @@ Audit log: `~/Desktop/SIFT-Sentinel/audit/execution-log.jsonl`
 
 The MCP server enforces read-only access architecturally. There is no
 `execute_shell` tool. You physically cannot run a destructive command — it does
-not exist in your action space. The SHA-256 of every evidence file is logged
-before and after each tool call in the audit log.
+not exist in your action space. File-backed evidence artifacts are hashed before
+and after tool calls, and any changed post-call hash is logged as an integrity
+error.
 
 ## Key artifact paths (relative to evidence root)
 

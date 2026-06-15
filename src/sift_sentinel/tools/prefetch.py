@@ -44,9 +44,9 @@ def analyze_prefetch(ctx: ToolContext, prefetch_path: str) -> ToolResult:
 
     all_records: list[dict] = []
     errors: list[str] = []
+    hashes_before = {str(pf): sha256_file(pf) for pf in pf_files}
 
     for pf in pf_files:
-        input_hash = sha256_file(pf)
         try:
             result = ctx.runner(["sccainfo", str(pf)])
             if result.exit_code == 0 and result.stdout:
@@ -61,6 +61,22 @@ def analyze_prefetch(ctx: ToolContext, prefetch_path: str) -> ToolResult:
     if errors:
         summary += f"\n  warnings: {'; '.join(errors[:3])}"
 
+    hashes_after = {str(pf): sha256_file(pf) for pf in pf_files}
+    changed = [path for path, before in hashes_before.items() if hashes_after[path] != before]
+    integrity = {
+        "prefetch_file_count": len(pf_files),
+        "input_hash_intact": not changed,
+    }
+    if changed:
+        msg = "evidence hash changed during analyze_prefetch call"
+        ctx.audit.finish(call_id, start, TOOL, args, input_hash=None,
+                         binary="sccainfo", exit_code=0, output_summary=summary,
+                         error=msg, changed_files=changed[:10], **integrity)
+        return ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg,
+                          error=msg, extra={**integrity, "changed_files": changed[:10]})
+
     ctx.audit.finish(call_id, start, TOOL, args, input_hash=None,
-                     binary="sccainfo", exit_code=0, output_summary=summary)
-    return ToolResult(tool=TOOL, call_id=call_id, records=all_records, summary=summary)
+                     binary="sccainfo", exit_code=0, output_summary=summary,
+                     **integrity)
+    return ToolResult(tool=TOOL, call_id=call_id, records=all_records,
+                      summary=summary, extra=integrity)

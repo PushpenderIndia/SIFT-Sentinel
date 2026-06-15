@@ -1,9 +1,9 @@
-"""Single registry of the agent's action space.
+"""Callable registry of forensic tools.
 
-Both the MCP server (what Claude can call over the protocol) and the
-orchestrator loop (what the reasoner's chosen actions resolve to) read this map.
-Adding a forensic capability is one entry here + one allowlist entry in
-``runner.ALLOWED_BINARIES`` — a small, reviewable change to the trust boundary.
+The MCP server registers typed functions explicitly in ``mcp_server.py``. This
+map gives tests and any future non-MCP orchestration path the same callable tool
+set. Adding a forensic capability should update both places, plus
+``runner.ALLOWED_BINARIES`` when the tool spawns an external binary.
 """
 from __future__ import annotations
 

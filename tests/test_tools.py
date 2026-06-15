@@ -38,6 +38,8 @@ def test_get_amcache_returns_structured_and_audits(tmp_path):
     assert rec.call_id == res.call_id
     assert rec.tool == "get_amcache"
     assert rec.input_hash == res.input_hash
+    assert rec.extra["input_hash_after"] == res.input_hash
+    assert rec.extra["input_hash_intact"] is True
 
 
 def test_mft_path_filter(tmp_path):
@@ -184,6 +186,8 @@ def test_read_artifact_reads_text_and_audits(tmp_path):
     assert res.input_hash is not None
     assert any("Invoke-Mimikatz" in r["text"] for r in res.records)
     assert res.extra["lines_total"] == 3
+    assert res.extra["input_hash_after"] == res.input_hash
+    assert res.extra["input_hash_intact"] is True
     assert ctx.audit.records()[-1].tool == "read_artifact"
 
 

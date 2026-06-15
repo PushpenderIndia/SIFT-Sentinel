@@ -70,12 +70,25 @@ def read_artifact(ctx: ToolContext, artifact_path: str,
                for i, ln in enumerate(lines[:MAX_LINES])]
     summary = (f"read_artifact: {len(records)} line(s) of {len(lines)} from "
                f"{path.name} ({size} bytes)")
+    output_hash = sha256_file(path)
+    integrity = {
+        "input_hash_after": output_hash,
+        "input_hash_intact": output_hash == input_hash,
+    }
+    if not integrity["input_hash_intact"]:
+        msg = "evidence hash changed during read_artifact call"
+        ctx.audit.finish(call_id, start, TOOL, args, input_hash,
+                         binary="read_artifact", error=msg, **integrity)
+        return ToolResult(tool=TOOL, call_id=call_id, records=[], summary=msg,
+                          input_hash=input_hash, error=msg, extra=integrity)
     ctx.audit.finish(call_id, start, TOOL, args, input_hash,
-                     binary="read_artifact", exit_code=0, output_summary=summary)
+                     binary="read_artifact", exit_code=0, output_summary=summary,
+                     **integrity)
     return ToolResult(
         tool=TOOL, call_id=call_id, records=records, summary=summary,
         input_hash=input_hash,
         extra={"bytes_total": size, "bytes_read": len(blob),
                "lines_total": len(lines),
-               "truncated": truncated or len(lines) > MAX_LINES},
+               "truncated": truncated or len(lines) > MAX_LINES,
+               **integrity},
     )

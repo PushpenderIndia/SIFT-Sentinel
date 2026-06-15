@@ -5,9 +5,9 @@ Implementation). Two invariants:
 
   1. Evidence is opened read-only. Disk images are mounted ``ro,noexec,nodev``;
      raw files are never opened in a writable mode.
-  2. Every evidence file is SHA-256 hashed before and after a run. If a hash
-     changes, the run is flagged as spoliated. The spoliation test (STRATEGY.md
-     §6.2) asserts these hashes are identical.
+  2. Evidence files are SHA-256 hashed before and after file-backed tool calls
+     and whole-run ``EvidenceSet`` checks. If a hash changes, the run is flagged
+     as spoliated.
 
 The agent has no tool that can mount read-write or write into evidence, so these
 invariants hold structurally, not by prompt instruction.
