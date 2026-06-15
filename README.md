@@ -275,6 +275,8 @@ missing, and registers the `sift-sentinel` MCP server in
 Claude Code's MCP configuration. Pass a custom root with
 `./install.sh --evidence-root /mnt/cases`.
 
+![](docs/installation.png)
+
 ### 2. Mount evidence read-only before restarting Claude Code
 ```bash
 # Disk image (E01 -> raw -> NTFS mount, read-only)
