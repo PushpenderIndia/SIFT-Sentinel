@@ -372,13 +372,13 @@ pytest            # no forensic tools or API key required
 | # | Deliverable | Where |
 |---|---|---|
 | 1 | Code repository (public, MIT) | this repo |
-| 2 | Demo video including a self-correction sequence | [YouTube](https://youtu.be/G-Joj5jwE7Y) · raw file [`docs/demo_video.mp4`](docs/demo_video.mp4) (also on the Devpost submission) |
+| 2 | Demo video including a self-correction sequence | [YouTube](https://youtu.be/G-Joj5jwE7Y) · raw file [`docs/demo_video.mp4`](docs/demo_video.mp4) (also on the Devpost submission). Additional demo recording — `base-file` SANS run: [`docs/sans-2018-base-file-demo.mp4`](docs/sans-2018-base-file-demo.mp4) |
 | 3 | Architecture diagram and trust boundaries | this README, Architecture section |
 | 4 | Written project description | this README |
-| 5 | Dataset documentation | SANS Find Evil! "SRL-2018 Compromised Enterprise Network" (`base-dc-cdrive.E01` + `SRL-2018/base-dc-memory.7z`); see Dataset section and `audit/triage-report-base-dc-2026-06-14.md` |
-| 6 | Accuracy report including spoliation | `src/sift_sentinel/benchmark/score.py` and the hash-invariance check |
+| 5 | Dataset documentation | Run against **two SANS Find Evil! "SRL-2018" hosts** — `base-dc` (`base-dc-cdrive.E01` + `base-dc-memory.7z`) and `base-file` (`base-file-cdrive.E01` + `base-file-memory.7z`) — **plus DFIR Madness Case 001 "Stolen Szechuan Sauce"** (`CITADEL-DC01` + `DESKTOP-SDN1RPT`); see [`docs/dataset.md`](docs/dataset.md) |
+| 6 | Accuracy report including spoliation | `src/sift_sentinel/benchmark/score.py` + hash-invariance check; scored run in [`docs/accuracy_report.md`](docs/accuracy_report.md) (Szechuan Sauce — 0.818 F1, 0% hallucination) |
 | 7 | Try-it-out instructions | this README and `install.sh` |
-| 8 | Agent execution logs | `audit/execution-log.jsonl`, one record per call |
+| 8 | Agent execution logs | one record per call — `audit/execution-log-base-dc.jsonl`, `audit/execution-log-base-file.jsonl` (SANS SRL-2018) and `audit/execution-log-szechuan.jsonl` (Szechuan Sauce) |
 
 ## License
 

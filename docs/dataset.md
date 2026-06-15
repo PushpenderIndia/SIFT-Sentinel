@@ -108,6 +108,8 @@ Full report with `call_id` citations:
 [`../audit/triage-report-base-file.md`](../audit/triage-report-base-file.md).
 Raw tool execution log:
 [`../audit/execution-log-base-file.jsonl`](../audit/execution-log-base-file.jsonl).
+Demo recording of this run:
+[`sans-2018-base-file-demo.mp4`](sans-2018-base-file-demo.mp4).
 
 ### CONFIRMED (≥2 independent sources agree)
 
@@ -150,7 +152,7 @@ Code so the `sift-sentinel` MCP server and its 18 tools appear, then:
 | `base-file` | `/triage` against `/mnt/file-case` with memory at `/evidence/base-file-memory.img` |
 
 Every finding traces back to the `call_id`s recorded in that run's audit log
-(`audit/execution-log.jsonl` for `base-dc`,
+(`audit/execution-log-base-dc.jsonl` for `base-dc`,
 `audit/execution-log-base-file.jsonl` for `base-file`), so a judge can locate the
 exact tool execution behind any claim above.
 
