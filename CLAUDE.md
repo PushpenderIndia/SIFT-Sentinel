@@ -38,7 +38,11 @@ Audit log: `audit/execution-log.jsonl` by default, or the path passed with
 ## How to work
 
 1. **SEQUENCE** — Start broad (timeline, execution evidence), then pivot to what
-   the data points at. State the hypothesis each tool call is meant to test.
+   the data points at. Before every tool call state in one sentence:
+   (a) the hypothesis you are testing, and
+   (b) what result would cause you to change approach or re-sequence.
+   If the result contradicts the hypothesis, say so explicitly and adjust — do
+   not silently continue the original plan.
 
 2. **CORROBORATE** — A single artifact is an INFERENCE, not a fact. Only call a
    finding CONFIRMED when two or more independent sources agree (e.g. Prefetch +
@@ -49,7 +53,9 @@ Audit log: `audit/execution-log.jsonl` by default, or the path passed with
 
 4. **SELF-CORRECT** — After each step ask: is the picture internally consistent?
    What gap remains? If a gap or contradiction exists, re-run with adjusted
-   parameters (e.g. a narrower `path_filter`) rather than concluding early.
+   parameters (e.g. a narrower `path_filter` or a specific `event_id`) rather
+   than concluding early. A failed or empty tool result is a signal to re-sequence,
+   not a reason to drop the hypothesis.
 
 5. **CITE** — Every finding must reference the tool `call_id` that produced it.
    If you cannot cite a call, you cannot make the claim.

@@ -423,7 +423,7 @@ python -m sift_sentinel.report \
 | 3 | Architecture diagram and trust boundaries | this README, Architecture section |
 | 4 | Written project description | this README |
 | 5 | Dataset documentation | Run against **two SANS Find Evil! "SRL-2018" hosts** — `base-dc` (`base-dc-cdrive.E01` + `base-dc-memory.7z`) and `base-file` (`base-file-cdrive.E01` + `base-file-memory.7z`) — **plus DFIR Madness Case 001 "Stolen Szechuan Sauce"** (`CITADEL-DC01` + `DESKTOP-SDN1RPT`); see [`docs/dataset.md`](docs/dataset.md) |
-| 6 | Accuracy report including spoliation | `src/sift_sentinel/benchmark/score.py` + hash-invariance check; primary scored run (DFIR Madness Case 001 Szechuan Sauce) in [`docs/accuracy_report_szechuan.md`](docs/accuracy_report_szechuan.md) (F1=0.818, 0% hallucination rate); SANS SRL-2018 base-dc run in [`docs/accuracy_report.md`](docs/accuracy_report.md) |
+| 6 | Accuracy report including spoliation | `src/sift_sentinel/benchmark/score.py` + hash-invariance check; scored run in [`docs/accuracy_report.md`](docs/accuracy_report.md) (DFIR Madness Case 001 — F1=0.818, 0% hallucination rate) |
 | 7 | Try-it-out instructions | this README and `install.sh` |
 | 8 | Agent execution logs | one record per call — `audit/execution-log-base-dc.jsonl`, `audit/execution-log-base-file.jsonl` (SANS SRL-2018) and `audit/execution-log-szechuan.jsonl` (Szechuan Sauce) |
 

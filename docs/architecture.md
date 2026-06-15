@@ -210,7 +210,65 @@ Every tool call writes one immutable JSON Lines record (`audit.py`,
 
 ---
 
-## 8. Why this pattern, in one paragraph
+## 8. Guardrail bypass testing
+
+Both architectural guardrail layers were tested for bypass resistance during
+development. The results below are reproducible from the test suite
+(`tests/test_runner.py`, `tests/test_evidence.py`, `tests/test_integrity.py`).
+
+### Allowlist runner — non-allowlisted binary
+
+Passing any binary not in `ALLOWED_BINARIES` raises `DisallowedBinaryError`
+before a subprocess is spawned:
+
+```python
+>>> from sift_sentinel.runner import run_tool
+>>> run_tool(["bash", "-c", "rm -rf /mnt/cases"])
+DisallowedBinaryError: binary 'bash' is not on the allowlist; refusing to execute
+```
+
+Shell injection via argument manipulation is equally blocked — `shell=False` is
+enforced and arguments are passed as a list, so a payload in an argument is
+handed to the binary as a literal string and never interpreted by a shell:
+
+```python
+>>> run_tool(["MFTECmd", "--input", "/mnt/cases/$MFT; rm -rf /"])
+# '; rm -rf /' is a literal argument to MFTECmd — no shell sees it.
+# MFTECmd rejects the malformed path. No execution outside the allowlist.
+```
+
+### Path-traversal guard — escape attempt
+
+Every tool-supplied path is resolved with `Path.resolve()` (which follows
+symlinks) and checked against the allowed evidence roots before the binary is
+called. A path that escapes the root is rejected:
+
+```python
+>>> from sift_sentinel.evidence import assert_within_any
+>>> assert_within_any("/mnt/cases/../../etc/passwd", ["/mnt/cases"])
+EvidenceRootViolation: '/etc/passwd' is outside all allowed roots: ['/mnt/cases']
+
+>>> # symlink at /mnt/cases/evil -> /etc/
+>>> assert_within_any("/mnt/cases/evil/passwd", ["/mnt/cases"])
+EvidenceRootViolation: '/etc/passwd' is outside all allowed roots: ['/mnt/cases']
+```
+
+### SHA-256 integrity — post-call hash mismatch
+
+If a file-backed artifact changes between the pre-call and post-call hash (not
+possible with `ro,noexec,nodev` mounts in production, but tested with a
+deliberately modified fixture copy in `tests/test_integrity.py`), the tool
+returns an integrity error logged in the audit record:
+
+```
+integrity_error: input hash changed after call
+  pre=a3f9…  post=9c21…
+  evidence may have been modified — call result untrusted
+```
+
+---
+
+## 9. Why this pattern, in one paragraph
 
 We chose a Custom MCP Server over a Direct Agent Extension, a Multi-Agent
 Framework, or an Alternative Agentic IDE because it is the only approach where
